@@ -6,7 +6,8 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
     },
     config: {
         urlSave : '/cake4/rd_cake/multi-wan-profiles/interface-add-edit.json',
-        urlView : '/cake4/rd_cake/multi-wan-profiles/interface-view.json'       
+        urlView : '/cake4/rd_cake/multi-wan-profiles/interface-view.json',
+        monCount: 1,      
     },
     control: {
         '#btnEthernet': {
@@ -44,6 +45,9 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
         },
         'pnlMultiWanProfileInterfaceAddEdit' : {
             activate : 'pnlActive'
+        },
+        '#btnAddHost' : {
+            click   : 'btnAddHost'
         }        
     },
     pnlActive   : function(form){
@@ -80,7 +84,33 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
             	}
             	if(b.result.data.method == 'pppoe'){
             		form.down('#btnPppoe').click();	
-            	}          	                       
+            	}
+            	
+            	if((b.result.data.monitor) && (b.result.data.monitor.track_ip)){
+            	     Ext.Array.forEach(b.result.data.monitor.track_ip,function(ip,index){
+            	        var index = index+1;
+            	        me.setMonCount(index);
+            	        if(index == 1){
+            	            form.down('#mon_track_ip_1').setValue(ip);
+            	        }else{
+            	            if(form.down('#mon_track_ip_'+index)){
+            	                form.down('#mon_track_ip_'+index).setValue(ip);
+            	            }else{
+                	            form.down('#pnlPingHosts').add({
+                                    xtype       : 'textfield',
+                                    fieldLabel  : 'Host / IP '+index,
+                                    name        : 'mon_track_ip_'+index,
+                                    itemId      : 'mon_track_ip_'+index,
+                                    allowBlank  : true,
+                                    value       : ip,
+                                    labelClsExtra: 'lblRd'           	            
+                	            });
+                	        }
+            	        }
+                        console.log(ip);
+                        console.log(me.getMonCount());
+                    });            	
+            	}            	          	                       
             }
         });          
     },
@@ -232,5 +262,18 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
             },
             failure             : Ext.ux.formFail
         });
-    },  
+    },
+    btnAddHost: function(button){
+        var me          = this;
+        var next_number = me.getMonCount()+1;
+        me.getView().down('#pnlPingHosts').add({
+            xtype       : 'textfield',
+            fieldLabel  : 'Host / IP '+next_number,
+            name        : 'mon_track_ip_'+next_number,
+            itemId      : 'mon_track_ip_'+next_number,
+            allowBlank  : true,
+            labelClsExtra: 'lblRd'           	            
+        });
+        me.setMonCount(next_number);  
+    }  
 });

@@ -309,7 +309,7 @@ Ext.define('Rd.view.multiWanProfiles.pnlMultiWanProfileInterfaceAddEdit', {
         var pnlPingHosts = {
             xtype       : 'panel',
             itemId      : 'pnlPingHosts',
-            bodyStyle   : 'background: #e0ebeb',
+          //  bodyStyle   : 'background: #e0ebeb',
             layout      : 'anchor',
             defaults    : {
                 anchor  : '100%'
@@ -318,7 +318,8 @@ Ext.define('Rd.view.multiWanProfiles.pnlMultiWanProfileInterfaceAddEdit', {
                 {
                     xtype       : 'textfield',
                     fieldLabel  : 'Host / IP 1',
-                    name        : 'ping_host_1',
+                    name        : 'mon_track_ip_1',
+                    itemId      : 'mon_track_ip_1',
                     allowBlank  : false,
                     blankText   : i18n("sSupply_a_value"),
                     labelClsExtra: 'lblRdReq'
@@ -509,26 +510,23 @@ Ext.define('Rd.view.multiWanProfiles.pnlMultiWanProfileInterfaceAddEdit', {
                 anchor  : '100%'
             },
             items       : [
+                {
+                    xtype: 'component',
+                    html: '<div>Hosts to ping</div>',
+                    cls: 'heading'
+                },
                 pnlPingHosts,
                 { xtype : 'button', text: 'ADD HOST / IP ADDRESS', 	itemId: 'btnAddHost',  flex:1, ui : 'default-toolbar', 'margin' : '0' },
                 {
-                    xtype       : 'numberfield',
-                    name        : 'reliability',
-                    fieldLabel  : 'Reliability',
-                    allowBlank  : true,
-                    maxValue    : 1,
-                    minValue    : 1,
-                    value       : 1,
-                    labelClsExtra : 'lblRd',
-                    hideTrigger : true,
-                    keyNavEnabled  : false,
-                    mouseWheelEnabled	: false
+                    xtype: 'component',
+                    html: '<div>Ping test settings</div>',
+                    cls: 'heading',
+                    margin  : '25 0 0 0'
                 },
                 {
-                    xtype       : 'numberfield',
-                    name        : 'ping_count',
-                    fieldLabel  : 'Ping Count',
-                    allowBlank  : true,
+                    xtype: 'numberfield',
+                    fieldLabel: 'Ping count',
+                    name: 'pingCount',
                     maxValue    : 10,
                     minValue    : 1,
                     value       : 1,
@@ -536,7 +534,122 @@ Ext.define('Rd.view.multiWanProfiles.pnlMultiWanProfileInterfaceAddEdit', {
                     hideTrigger : true,
                     keyNavEnabled  : false,
                     mouseWheelEnabled	: false
-                }           
+                }, {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Ping size',
+                    name: 'pingSize',
+                    labelClsExtra : 'lblRd',
+                }, {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Max Time to Live',
+                    name: 'maxTTL',
+                    labelClsExtra : 'lblRd',
+                }, {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Ping timeout',
+                    name: 'pingTimeout',
+                    labelClsExtra : 'lblRd',
+                },
+                {
+                    xtype: 'component',
+                    html: '<div>Ping test frequency</div>',
+                    cls: 'heading'
+                },
+                {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Interval',
+                    name: 'pingInterval',
+                    labelClsExtra : 'lblRd',
+                }, 
+                {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Interval during failure',
+                    name: 'failureInterval',
+                    labelClsExtra : 'lblRd',
+                },
+                {
+                    xtype       : 'checkbox',      
+                    boxLabel  	: 'Keep failure interval',
+                    boxLabelCls	: 'boxLabelRd',
+                    name        : 'keep_failure_interval',
+                },
+                {
+                    xtype: 'numberfield',
+                    fieldLabel: 'Recovery interval',
+                    name: 'recover_interval',
+                    labelClsExtra : 'lblRd',
+                },      
+                {
+                    xtype: 'component',
+                    html: '<div>Uptime requirements</div>',
+                    cls: 'heading'
+                },
+                {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'numberfield',
+                            name: 'trackingReliability',
+                            labelClsExtra : 'lblRd',
+                            fieldLabel: 'A minimum of',
+                            minValue: 1,
+                            flex    : 1
+                        },
+                        {
+                            xtype: 'label',
+                            text: 'hosts must pass the ping test',
+                            userCls : 'lblRd',
+                            cls : 'lblRd',
+                            flex    : 1,
+                            margin  : '25 0 0 0'
+                        }
+                    ]
+                },  
+                {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'numberfield',
+                            name: 'interfaceUpPasses',
+                            labelClsExtra : 'lblRd',
+                            fieldLabel: 'Interface up after',
+                            minValue: 1,
+                            flex    : 1
+                        },
+                        {
+                            xtype: 'label',
+                            text: 'ping test passes',
+                            userCls : 'lblRd',
+                            cls : 'lblRd',
+                            flex:1,
+                            margin  : '25 0 0 0'
+                        }
+                    ]
+                },
+                {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'numberfield',
+                            name: 'interfaceDownFails',
+                            labelClsExtra : 'lblRd',
+                            fieldLabel: 'Interface down after',
+                            minValue: 1,
+                            flex    : 1
+                        },
+                        {
+                            xtype: 'label',
+                            text: 'ping test fails',
+                            userCls : 'lblRd',
+                            cls : 'lblRd',
+                            flex    : 1,
+                            margin  : '25 0 0 0'
+                        }
+                    ]
+                }   
             ]
         }            
        

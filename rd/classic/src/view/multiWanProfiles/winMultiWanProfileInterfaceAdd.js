@@ -23,6 +23,7 @@ Ext.define('Rd.view.multiWanProfiles.winMultiWanProfileInterfaceAdd', {
         'Rd.view.multiWanProfiles.vcMultiWanProfileInterface',
        // 'Rd.view.components.cmbConnectionMethods',
         'Rd.view.components.cmbSqmProfile',
+        'Rd.view.components.txtWithTooltip'
     ],
     controller  : 'vcMultiWanProfileInterface',
     initComponent: function() {
@@ -463,6 +464,12 @@ Ext.define('Rd.view.multiWanProfiles.winMultiWanProfileInterfaceAdd', {
                             hideTrigger : true,
                             keyNavEnabled  : false,
                             mouseWheelEnabled	: false
+                        },
+                        {
+                            xtype       : 'txtWithTooltip',
+                            fieldLabel  : 'Ping Count',
+                            tooltipText : 'Gooi hom nou pappie',
+                            labelClsExtra : 'lblRd',
                         }                        
                     ]           
                 }                           	
