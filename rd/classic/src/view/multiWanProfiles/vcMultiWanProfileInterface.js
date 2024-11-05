@@ -86,8 +86,8 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
             		form.down('#btnPppoe').click();	
             	}
             	
-            	if((b.result.data.monitor) && (b.result.data.monitor.track_ip)){
-            	     Ext.Array.forEach(b.result.data.monitor.track_ip,function(ip,index){
+            	if(b.result.data.mon_track_ip){
+            	     Ext.Array.forEach(b.result.data.mon_track_ip,function(ip,index){
             	        var index = index+1;
             	        me.setMonCount(index);
             	        if(index == 1){
@@ -248,6 +248,7 @@ Ext.define('Rd.view.multiWanProfiles.vcMultiWanProfileInterface', {
         formPanel.submit({
             clientValidation    : true,
             url                 : me.getUrlSave(),
+            submitEmptyText     : false, // Set this in the form config
             success             : function(form, action) {
                 me.getView().store.reload();
                 if (formPanel.closable) {

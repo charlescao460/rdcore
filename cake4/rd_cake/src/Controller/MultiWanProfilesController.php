@@ -342,6 +342,7 @@ class MultiWanProfilesController extends AppController {
         if($entity){ 
         
             $entity->{'method'} = 'dhcp';
+            $entity->{'enable_monitor'} = false;
               
             foreach($entity->mwan_interface_settings as $mwanInterfaceSetting){
                 if($mwanInterfaceSetting->grouping == 'wbw_setting'){
@@ -364,8 +365,28 @@ class MultiWanProfilesController extends AppController {
                 
                 if($mwanInterfaceSetting->grouping == 'ethernet_setting'){
                     $entity->{'ethernet_'.$mwanInterfaceSetting->name} = $mwanInterfaceSetting->value;  
-                }              
+                }
+                
+                if($mwanInterfaceSetting->grouping == 'monitor'){
+                    $entity->{'enable_monitor'} = true;
+                    if($mwanInterfaceSetting->type == 'option'){
+                        $entity->{'mon_'.$mwanInterfaceSetting->name} = $mwanInterfaceSetting->value;
+                    }
+                    if($mwanInterfaceSetting->type == 'list'){
+                        if(!isset($entity->{'mon_'.$mwanInterfaceSetting->name.'[]'})){
+                            $entity->{'mon_'.$mwanInterfaceSetting->name.'[]'} = [$mwanInterfaceSetting->value];
+                        }else{
+                            array_push($entity->{'mon_'.$mwanInterfaceSetting->name.'[]'},$mwanInterfaceSetting->value);
+                        }
+                    }  
+                }
+                             
             }
+            
+            if(isset($entity->{'mon_track_ip[]'})){
+                $entity->{'mon_track_ip'} = $entity->{'mon_track_ip[]'};
+                unset($entity->{'mon_track_ip[]'});           
+            }                    
             unset($entity->mwan_interface_settings);
                 
             $data =  $entity;                    
@@ -397,7 +418,7 @@ class MultiWanProfilesController extends AppController {
         if ($this->request->is('post')) { 
             $req_d  = $this->request->getData();
             
-            $check_items = ['apply_sqm_profile'];
+            $check_items = ['apply_sqm_profile','enable_monitor'];
             foreach($check_items as $i){
                 if(isset($req_d[$i])){
 				    if($req_d[$i] == 'null'){
@@ -519,7 +540,45 @@ class MultiWanProfilesController extends AppController {
                 $e = $this->{'MwanInterfaceSettings'}->newEntity($d);  
                 $this->{'MwanInterfaceSettings'}->save($e);    
             }
-        }  
+        }
+        
+        //-- Monitor is a bit more complicated :-)
+        if(isset($cdata['enable_monitor'])){
+            foreach(array_keys($cdata) as $key){
+                if(preg_match('/^mon_/',$key)){
+                    if(preg_match('/^mon_track_ip/',$key)){
+                        $d      = [];
+                        $d['mwan_interface_id'] = $mwan_interface_id;
+                        $d['grouping']  = 'monitor';
+                        $d['type']      = 'list';
+                        $d['name']      = 'track_ip';
+                        $d['value']     = $cdata["$key"];                                  
+                        $e = $this->{'MwanInterfaceSettings'}->newEntity($d);  
+                        $this->{'MwanInterfaceSettings'}->save($e);                                        
+                    }elseif($key == 'mon_flush_conntrack'){
+                        foreach($cdata["mon_flush_conntrack"] as $conntrack){
+                            $d      = [];
+                            $d['mwan_interface_id'] = $mwan_interface_id;
+                            $d['grouping']  = 'monitor';
+                            $d['type']      = 'list';
+                            $d['name']      = 'flush_conntrack';
+                            $d['value']     = $conntrack;                                  
+                            $e = $this->{'MwanInterfaceSettings'}->newEntity($d);
+                            $this->{'MwanInterfaceSettings'}->save($e);                         
+                        }
+                                       
+                    }else{
+                        $d      = [];
+                        $d['mwan_interface_id'] = $mwan_interface_id;
+                        $d['grouping']  = 'monitor';
+                        $d['name']      = preg_replace('/^mon_/', '', $key);
+                        $d['value']     = $cdata["$key"];                                  
+                        $e = $this->{'MwanInterfaceSettings'}->newEntity($d);  
+                        $this->{'MwanInterfaceSettings'}->save($e);                       
+                    } 
+                }
+            }
+        }   
    
     }
     
