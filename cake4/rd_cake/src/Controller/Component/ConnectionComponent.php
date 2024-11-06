@@ -444,23 +444,35 @@ class ConnectionComponent extends Component {
 	    
 	    foreach($mwanInterfaces as $mwanInterface){
             $if_id  = $mwanInterface->id;
+            
+            $if_options = [
+                'enabled'   => 1,
+                'family'    => 'ipv4'
+            ];
+            
+            $if_lists = [
+            ];
+                        
+            foreach($mwanInterface->mwan_interface_settings as $mwanInterfaceSetting){
+                if($mwanInterfaceSetting->grouping == 'monitor'){
+                    if($mwanInterfaceSetting->type == 'option'){
+                        $if_options[$mwanInterfaceSetting->name] = $mwanInterfaceSetting->value;
+                    }
+                    if($mwanInterfaceSetting->type == 'list'){
+                        if(!isset($if_lists[$mwanInterfaceSetting->name])){
+                            $if_lists[$mwanInterfaceSetting->name] = [$mwanInterfaceSetting->value];
+                        }else{
+                            array_push($if_lists[$mwanInterfaceSetting->name],$mwanInterfaceSetting->value);
+                        }
+                    }                             
+                }           
+            }
                 
             //Interfaces
             array_push($config, [
-                'interface'   => "mw$if_id",
-                'options'   => [
-                    'enabled'       => 1,
-                    'family'        => 'ipv4',
-                    'reliability'   => '2'      
-                ],
-                'lists'     => [
-                    'track_ip' => [
-                        '1.0.0.1',
-                        '1.1.1.1',
-                        '208.67.222.222',
-                         '208.67.220.220'
-                    ]
-                ]	    
+                'interface' => "mw$if_id",
+                'options'   => $if_options,
+                'lists'     => $if_lists	    
             ]);
 
             if($mwanInterface->policy_active){
