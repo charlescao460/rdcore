@@ -19,7 +19,7 @@ use Cake\I18n\Time;
 
 class MeshHelper22Component extends Component {
 
-	protected $components 		= ['Firewall','MdFirewall','AccelPpp', 'Sqm'];
+	protected $components 		= ['Firewall','MdFirewall','AccelPpp', 'Sqm','Connection'];
     protected $RadioSettings    = [];
     protected $l3_vlans         = []; //Layer three VLAN interfaces
     
@@ -344,8 +344,7 @@ class MeshHelper22Component extends Component {
 		
         return $json; 
     }
-    
-    
+      
 	private function _build_system($ent_mesh){
 		//Get the root password
 		$default_data = $this->_getDefaultSettings();
@@ -480,7 +479,7 @@ class MeshHelper22Component extends Component {
         return $data;
     }
         
-    private function _build_network($ent_mesh,$gateway = false,$version='18.06'){
+    private function _build_network($ent_mesh,$gateway = false){
 
         $network 				= [];
         $nat_data				= [];
@@ -489,138 +488,9 @@ class MeshHelper22Component extends Component {
 		$include_lan_dhcp 		= true;
 		$nat_detail				= [];
 		$pppoe_detail           = [];
-
-
-        //=================================
-        //loopback if
-        array_push( $network,
-            [
-                "interface"    => "loopback",
-                "options"   => [
-                    "device"        => "lo",
-                    "proto"         => "static",
-                    "ipaddr"        => "127.0.0.1",
-                    "netmask"       => "255.0.0.0"
-               ]
-            ]);
-        //========================
-
-		//We add a new feature - we can specify for NON Gateway nodes to which their LAN port should be connected with
-		if($ent_mesh->node_setting !== null && $ent_mesh->node_setting->eth_br_chk != ''){
-			$eth_br_chk 		= $ent_mesh->node_setting->eth_br_chk;
-			$eth_br_with	    = $ent_mesh->node_setting->eth_br_with;
-			$eth_br_for_all	    = $ent_mesh->node_setting->eth_br_for_all;
-		}else{
-	    	Configure::load('MESHdesk');
-			$c_n_s 				= Configure::read('common_node_settings'); //Read the defaults
-			$eth_br_chk 		= $c_n_s['eth_br_chk'];
-			$eth_br_with	    = $c_n_s['eth_br_with'];
-			$eth_br_for_all	    = $c_n_s['eth_br_for_all'];
-		}
-
-		$lan_bridge_flag 	= false;
 		
-		//If we need to bridge and it is with the LAN (the easiest)
-		if(
-			($eth_br_chk)&&
-			($eth_br_with == 0)
-		){
-			$lan_bridge_flag = true;
-		}
-
-        //LAN(Actually WAN e.g. eth1)
-		$br_int = $this->_eth_br_for($this->Hardware);
-		$wan_if = $this->_eth_br_for($this->Hardware);
+		[$network,$eth_br_chk,$eth_br_with] = $this->Connection->getNodeConnectionInfo($this->NodeId,$ent_mesh,$this->Hardware,$gateway);
 		
-		if($gateway == true){
-		    if($this->Vlan){
-		        $br_int = $br_int.'.'.$this->Vlan;
-		    }
-		}
-		
-		if($lan_bridge_flag){
-			$br_int = "$br_int bat0.100";
-		}
-
-		//If we need to bridge and it is NOT with the LAN (more involved)
-		if(
-			($eth_br_chk)&&
-			($eth_br_with != 0)&&
-			($gateway == false) //Only on non-gw nodes
-		){
-			$include_lan_dhcp = false; //This case we do not include the lan dhcp bridge
-		}
-        //==================
-        
-
-		if($include_lan_dhcp){
-
-			//We need to se the non-gw nodes to have:
-			//1.) DNS Masq must not be running
-			//2.) The LAN must now have DHCP client since this will trigger the setup script as soon as the interface get an IP
-			//3.) This will cause a perpetiual loop since it will kick off the setup script and reconfigure itself.
-			//4.) The gateway however still needs to maintain its dhcp client status.
-			$proto = 'dhcp';
-			if(($lan_bridge_flag)&&($gateway == false)){
-				$proto = 'static';
-			}
-			
-			//SMALL HACK START 
-			$m = $this->getController()->getRequest()->getQuery('mac');
-            $m = strtolower($m);
-            $m = str_replace('-', ':', $m);
-            //SMALL HACK END
-                               
-            $lan_options = [
-                "ifname"        => "$br_int", 
-                "type"          => "bridge",
-                "proto"         => "$proto"
-            ];
-            if($version !== '21.02'){
-                $lan_options['macaddr'] = $m;  
-            }
-            
-             array_push( $network,
-                [
-                    "device" => "br-lan",
-                    "options"   => [
-                    	'name'	=> 'br-lan',
-                    	'type'	=> 'bridge'
-                    ],
-                    'lists'	=> ['ports' => [
-                    	$br_int
-                    ]
-            	]
-            ]);
-            
-            array_push( $network,
-                [
-                    "interface" => "lan",
-                    "options"   => [
-                    	"proto" => "$proto",
-                    	"device"=> 'br-lan'
-                    ]
-            ]);
-            
-            if($version == '21.02'){         
-                if($wan_if == 'wan'){      
-                    array_push( $network,
-                        [
-                            "device"    => $wan_if,
-                            "options"   => [
-                                "name"      => $wan_if, 
-                                "macaddr"   => "$m"
-                           ]
-                    ]);
-                }      
-            }
-                    
-	        //-- Jul 2021 -ADD LTE Support--
-            $qmi_return =  $this->_checkForQmi();
-            if($qmi_return){
-                array_push( $network,$qmi_return);
-            }  	       	
-		}
 		
 		//---- Batman-Adv ---
 		$gw_mode = 'client';
@@ -1241,7 +1111,7 @@ class MeshHelper22Component extends Component {
 						($eth_br_chk)&& 			//Eth br specified
 						($eth_br_with == $exit_id) 	//Only if the current one is the one to be bridged
 					){
-						array_push($interfaces,$br_int);
+						array_push($interfaces,$this->Connection->br_int);
 					}
 					
 					array_push($network,
