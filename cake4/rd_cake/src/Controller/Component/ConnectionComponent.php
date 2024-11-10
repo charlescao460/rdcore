@@ -767,7 +767,11 @@ class ConnectionComponent extends Component {
 	    $if_lists = [];
 	     
 	    foreach($mwanInterfaces as $mwanInterface){
-	        $if_lists[] = 'mw'.$mwanInterface->id;    
+	        if($mwanInterface->type == 'ethernet'){
+	            $if_lists[] = 'br-mw'.$mwanInterface->id;     
+	        }else{
+	            $if_lists[] = 'mw'.$mwanInterface->id;
+	        }
 	    }
 	
 	    $config = [
