@@ -263,6 +263,7 @@ class ConnectionComponent extends Component {
             if (!$mwanInterfaces->isEmpty()) {
                 $config = [];
                 $this->_buildMwanConfig($mwanInterfaces);
+                $this->_buildCollectdConfig($mwanInterfaces);
             }
             foreach($mwanInterfaces as $mwanInterface){
                 $if_id  = $mwanInterface->id;
@@ -760,4 +761,45 @@ class ConnectionComponent extends Component {
 	    $this->MwanSettings['mwan3'] = $config;
 	    
 	}
+	
+	private function _buildCollectdConfig($mwanInterfaces){
+	
+	    $if_lists = [];
+	     
+	    foreach($mwanInterfaces as $mwanInterface){
+	        $if_lists[] = 'mw'.$mwanInterface->id;    
+	    }
+	
+	    $config = [
+	        [	    
+	            'plugin'    => 'csv',
+	            'options'   => [
+                    'enable'    => '1',
+                    'StoreRates'=> '1',
+                    'DataDir'   => '/tmp'
+                ]
+            ],
+            [
+                'plugin'    => 'interface',
+                'options'   => [
+                    'enable'    => '1',
+                    'IgnoreSelected' => 0
+                ],
+                'lists'     => [
+                    'Interface' => $if_lists           
+                ]
+            ],
+            [
+                'plugin'    => 'logfile',
+	            'options'   => [
+                    'LogLevel'  => 'error',
+                    'File'      => '/tmp/collectd.log',
+                    'Timestamp' => true
+                ]           
+            ]
+        ];    
+	   	
+	    $this->MwanSettings['collectd'] = $config;
+	}
+	
 }
