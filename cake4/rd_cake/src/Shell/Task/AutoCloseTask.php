@@ -36,16 +36,12 @@ class AutoCloseTask extends Shell {
             foreach($q_r as $item){
                 $nasname        = $item->nasname;
                 $close_after    = $item->session_dead_time;
-                $this->out("<info>AutoClose::Auto closing potential stale sessions on $nasname after $close_after dead time</info>");
-                $conn = ConnectionManager::get('default');
-                
-                $conn->execute("UPDATE radacct set acctstoptime=ADDDATE(acctstarttime, INTERVAL acctsessiontime SECOND), acctterminatecause='Clear-Stale-Session' where nasipaddress='$nasname' AND acctstoptime is NULL AND ((UNIX_TIMESTAMP(now()) - (UNIX_TIMESTAMP(acctstarttime)+acctsessiontime))> $close_after)");
-                
-                //It may be that the nasidentifier is actually the unique attribute 
-                //and not the nasipaddress (espacially when doing Miktoritk!!!)
                 $nasidentifier  = $item->nasidentifier;
-                $conn->execute("UPDATE radacct set acctstoptime=ADDDATE(acctstarttime, INTERVAL acctsessiontime SECOND), acctterminatecause='Clear-Stale-Session' where nasidentifier='$nasidentifier' AND acctstoptime is NULL AND ((UNIX_TIMESTAMP(now()) - (UNIX_TIMESTAMP(acctstarttime)+acctsessiontime))> $close_after)");
-
+                $this->out("<info>AutoClose::Auto closing potential stale sessions on $nasname after $close_after dead time</info>");
+                
+                $conn = ConnectionManager::get('default');                
+                $conn->execute("UPDATE radacct set acctstoptime=acctupdatetime, acctterminatecause='Clear-Stale-Session' WHERE nasipaddress='$nasname' AND acctstoptime is NULL AND acctupdatetime < NOW() - INTERVAL $close_after SECOND");
+                $conn->execute("UPDATE radacct set acctstoptime=acctupdatetime, acctterminatecause='Clear-Stale-Session' where nasidentifier='$nasidentifier' AND acctstoptime is NULL AND acctupdatetime < NOW() - INTERVAL $close_after SECOND");
 
             }
         }else{
@@ -62,14 +58,14 @@ class AutoCloseTask extends Shell {
                 $calledstationid= $item->calledstationid;
                 $close_after    = $item->session_dead_time;
                 $this->out("<info>AutoClose::Auto closing potential stale sessions on NASID $nasidentifier after $close_after dead time</info>");
-                $conn = ConnectionManager::get('default');
                 
+                $conn = ConnectionManager::get('default');     
                 if($nasidentifier != ''){
-                  $conn->execute("UPDATE radacct set acctstoptime=ADDDATE(acctstarttime, INTERVAL acctsessiontime SECOND), acctterminatecause='Clear-Stale-Session' where nasidentifier='$nasidentifier' AND acctstoptime is NULL AND ((UNIX_TIMESTAMP(now()) - (UNIX_TIMESTAMP(acctstarttime)+acctsessiontime))> $close_after)");
+                    $conn->execute("UPDATE radacct set acctstoptime=acctupdatetime, acctterminatecause='Clear-Stale-Session' WHERE nasidentifier='$nasidentifier' AND acctstoptime is NULL AND acctupdatetime < NOW() - INTERVAL $close_after SECOND");
                 }
                 
                  if($calledstationid != ''){
-                 $conn->execute("UPDATE radacct set acctstoptime=ADDDATE(acctstarttime, INTERVAL acctsessiontime SECOND), acctterminatecause='Clear-Stale-Session' where calledstationid='$calledstationid' AND acctstoptime is NULL AND ((UNIX_TIMESTAMP(now()) - (UNIX_TIMESTAMP(acctstarttime)+acctsessiontime))> $close_after)");
+                    $conn->execute("UPDATE radacct set acctstoptime=acctupdatetime, acctterminatecause='Clear-Stale-Session' WHERE calledstationid='$calledstationid' AND acctstoptime is NULL AND acctupdatetime < NOW() - INTERVAL $close_after SECOND");
                 }
             }
         }else{
