@@ -22,7 +22,7 @@ class AutoCloseTask extends Shell {
     private function _show_header(){
         $this->out('<comment>==============================</comment>');
         $this->out('<comment>---Stale Session Checking-----</comment>');
-        $this->out('<comment>-------RADIUSdesk 2019--------</comment>');
+        $this->out('<comment>-------RADIUSdesk 2024--------</comment>');
         $this->out('<comment>______________________________</comment>');
     }
     

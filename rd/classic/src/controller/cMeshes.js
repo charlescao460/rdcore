@@ -3,7 +3,7 @@ Ext.define('Rd.controller.cMeshes', {
     actionIndex: function(pnl){
         var me      = this;
         pnl.add({ 
-            title   : 'Meshes', 
+            title   : 'Mesh Networks', 
             xtype   : 'gridMeshes',
             border  : false,
             plain   : true,

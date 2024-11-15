@@ -4,6 +4,9 @@ Ext.define('Rd.view.profileComponents.vcProfileComponentEntry', {
     control: {
     	'cmbVendor': {
             change	: 'cmbVendorChange'
+        },
+        'cmbAttribute': {
+            change	: 'cmbAttributeChange'
         }
     },
     init    : function() {
@@ -15,5 +18,18 @@ Ext.define('Rd.view.profileComponents.vcProfileComponentEntry', {
         var attr    = me.getView().down('cmbAttribute');
         attr.getStore().getProxy().setExtraParam('vendor',value);
         attr.getStore().load();   
+    },
+    cmbAttributeChange: function(cmb){
+        var me 		= this;
+        var record  = cmb.getSelection();
+        var tag     = me.getView().down('cmbAttributeTag');
+        if(record.get('has_tag')){
+            tag.show();
+            tag.enable();
+        }else{
+            tag.hide();
+            tag.disable();
+        }  
     }  
+    
 });

@@ -19,8 +19,8 @@ Ext.define('Rd.view.permanentUsers.gridUserPrivate' ,{
             {   glyph: Rd.config.icnDelete,   scale: 'large',   itemId: 'delete',    disabled: true,    tooltip:    i18n('sDelete'),ui:'button-red'}
         ]}, 
         { xtype: 'buttongroup', title: null,items : [
-            {   xtype: 'cmbVendor'     , itemId:'cmbVendor',    emptyText: i18n('sSelect_a_vendor'), padding: '5 0 0 0' },{ xtype: 'tbseparator'},
-            {   xtype: 'cmbAttribute'  , itemId:'cmbAttribute', emptyText: i18n('sSelect_an_attribute'), padding: '5 0 0 0'},
+            {   xtype: 'cmbVendor'     , itemId:'cmbVendor',    emptyText: i18n('sSelect_a_vendor'), padding: '5 0 0 0' , width: 300},{ xtype: 'tbseparator'},
+            {   xtype: 'cmbAttribute'  , itemId:'cmbAttribute', emptyText: i18n('sSelect_an_attribute'), padding: '5 0 0 0',width: 300},
             {   glyph: Rd.config.icnAdd, scale: 'large',        itemId: 'add',       tooltip:    i18n('sAdd'),ui:'button-green'}
         ]}        
     ],

@@ -26,28 +26,24 @@ class FreeradiusComponent extends Component {
 
    public function getVendors(){
         $this->_getVendors();
-        $vendors = array_keys($this->vendors);
-        //sort($vendors);
-        return ($vendors);
+        return $this->vendors;
     }
 
     public function getAttributes($vendor){
         $this->fr_internal = Configure::read('freeradius.path_to_dictionary_files').'dictionary.freeradius.internal';
         $this->_getVendors();
        // print_r($this->vendors);
-        return $this->vendors[$vendor];
+        return $this->vendors[$vendor]['attributes'];
     }
 
     private function _getVendors(){
 
-        $vendor_list = array();
-
         $main_dictionary_file       = Configure::read('freeradius.main_dictionary_file');
         $path_to_dictionary_files   = Configure::read('freeradius.path_to_dictionary_files');
 
-        $this->vendors['Misc'] = array();
-        $this->vendors['FreeRADIUS internal']   = array();
-        $this->vendors['FreeRADIUS Custom']    = array();
+        $this->vendors['Misc']                  = ['name' => 'Misc', 'id' => 'Misc', 'has_number' => false, 'attributes' => []];
+        $this->vendors['FreeRADIUS internal']   = ['name' => 'FreeRADIUS internal', 'id' => 'FreeRADIUS internal', 'has_number' => false, 'attributes' => []];
+        $this->vendors['FreeRADIUS Custom']     = ['name' => 'FreeRADIUS Custom', 'id' => 'FreeRADIUS Custom', 'has_number' => false, 'attributes' => []];
 
         //The main dictionary file can contain private attributes.... add them here:
         $this->_add_attributes_to_vendor($main_dictionary_file,'FreeRADIUS Custom');
@@ -119,7 +115,8 @@ class FreeradiusComponent extends Component {
 
                 $vendor = preg_split("/\s+/",$line);
                // echo $vendor[1]."<br>\n";
-                $this->vendors[$vendor[1]] = array();
+                $this->vendors[$vendor[1]] = ['name' => $vendor[1], 'id' => $vendor[1],'number' => $vendor[2], 'attributes' => [],'has_number' => true];
+                
                 $this->_add_attributes_to_vendor($file_to_look_for_includes,$vendor[1]);
                 return;
 
@@ -147,7 +144,13 @@ class FreeradiusComponent extends Component {
             if(preg_match($pattern,$line)){
                 $attribute = preg_split("/\s+/",$line);
                 //echo $attribute[1]."<br>\n";
-               array_push($this->vendors[$vendor],$attribute[1]);
+                $has_tag = false;
+                if(isset($attribute[4])){
+                    if(preg_match('/has_tag/',$attribute[4])){
+                        $has_tag = true;
+                    }
+                }                
+                array_push($this->vendors[$vendor]['attributes'],['name' => $attribute[1], 'id' => $attribute[1] ,'number' => $attribute[2], 'type' => $attribute[3], 'has_tag' => $has_tag]);
             }
         }
     }

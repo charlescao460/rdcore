@@ -33,44 +33,12 @@ Ext.define('Rd.view.aps.gridApLists' ,{
                     console.log("Collapsed");
                 }
             },
-            rowBodyTpl : '<div id="expand-{id}">Loading...</div>' 
-           /* rowBodyTpl : new Ext.XTemplate(
-                '<div id="expand-{id}">',
-                    '<div style="color:#2255ce;  background-color:#aeaeae; padding:5px;">',
-                    '<img src="/cake4/rd_cake/img/hardwares/{hw_photo}" alt="{hw_human}" style="float: left; padding-right: 20px;">',
-                    '<h2>{name}</h2>',
-                    '<span>{hw_human}</span>',
-                    '</div>',
-                    '<div class="sectionHeader">',
-                        '<h2>DEVICE INFORMATION (for the past hour)</h2>',
-                    '</div>',
-                    "<div style='background-color:white; padding:5px;'>",
-                       '<ul class="fa-ul">',    
-                        "<tpl if='state == \"never\"'>",
-                        "<li style='color:blue;'><i class='fa-li fa fa-question-circle'></i>Never connected before</li>",
-                        "</tpl>",
-                        "<tpl if='state == \"down\"'>",
-                        "<li style='color:red;'><i class='fa-li fa  fa-exclamation-circle'></i>Offline (last check-in <b>{last_contact_human}</b> ago).</li>",
-                        "</tpl>",
-                        "<tpl if='state == \"up\"'>",
-                        '<li style="color:green;"><i class="fa-li fa fa-check-circle"></i>Online (last check-in <b>{last_contact_human}</b> ago).</li>',
-                        "</tpl>",
-                        '<tpl for="ssids">',
-                            '<li><i class="fa-li fa fa-wifi"></i><b>{name}</b> had <b>{users}</b> users.</li>',
-                        '</tpl>',                  
-                        '<li><i class="fa-li fa fa-info-circle"></i>Public IP <b>{last_contact_from_ip}</b>.</li>',
-                        '<li><i class="fa-li fa fa-database"></i>Data usage <b>{data_past_hour}</b>.</li>',
-                        '<li><i class="fa-li fa fa-link"></i>Last connection from <b>{newest_station}</b> which was <b>{newest_time}</b> ({newest_vendor}).</li>',
-                         "<li style='color:blue;'><i class='fa-li fa fa-info-circle'></i>LAN IP: {lan_ip} LAN Gateway: {lan_gw}  ({lan_proto}) </li>",
-                            '</ul>',
-                    "</div>",
-                "</div>"
-            )*/
+            rowBodyTpl : '<div id="expand-{id}">Loading...</div>'
         }
     ],
     viewConfig: {
         trackOver: false,
-        listeners: {
+        listeners: {      
             'expandbody': function(rowNode, record, expandRow, eOpt){
                 var me              = this;
                 var rowId           = record.getId(); // Get the ID of the row to update the right div

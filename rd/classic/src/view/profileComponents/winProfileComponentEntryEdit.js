@@ -5,7 +5,7 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
     draggable   : true,
     resizable   : true,
     title       : 'Edit Profile Component Entry',
-    width       : 450,
+    width       : 550,
     height      : 500,
     plain       : true,
     border      : false,
@@ -20,6 +20,7 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
     requires: [
         'Ext.form.Panel',
         'Ext.form.field.Text',
+        'Rd.view.components.cmbAttributeTag',
         'Rd.view.profileComponents.vcProfileComponentEntry'
     ],
     controller  : 'vcProfileComponentEntry',
@@ -106,6 +107,13 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
                		xtype		: 'cmbAttribute',
                		name		: 'attribute',
                		emptyText	: i18n('sSelect_an_attribute')
+               	},
+               	{
+               	    xtype		: 'cmbAttributeTag',
+               	    hidden      : true,
+               	    disabled    : true,
+               	    name        : 'attribute_tag',
+               	    value       : 0
                	},
                	{
                		xtype		: 'combobox',

@@ -43,10 +43,14 @@ class ProfileComponentsController extends AppController {
     
     public function vendors(){
     //Gives a list of Vendors from the dictionaries including a few special ones that is not defined but used to group the attributes
-        $v = $this->Freeradius->getVendors();
+        $vendors = $this->Freeradius->getVendors();
         $items = [];
-        foreach($v as $i){
-            array_push($items, ['id' => $i, 'name' => $i]);
+        foreach($vendors as $vendor){
+            if(isset($vendor['number'])){
+                array_push($items, ['id' => $vendor['id'], 'name' => $vendor['name'], 'has_number' => $vendor['has_number'], 'number' => $vendor['number']]);   
+            }else{
+                array_push($items, ['id' => $vendor['id'], 'name' => $vendor['name'], 'has_number' => $vendor['has_number']]);
+            }
         }
         $this->set([
             'items' => $items,
@@ -60,10 +64,7 @@ class ProfileComponentsController extends AppController {
         $items 	= [];
         $req_q  = $this->request->getQuery(); //q_data is the query data 
         if(isset($req_q['vendor'])){
-            $a  = $this->Freeradius->getAttributes($req_q['vendor']);
-            foreach($a as $i){
-                array_push($items, array('id' => $i, 'name' => $i));
-            }
+            $items  = $this->Freeradius->getAttributes($req_q['vendor']);
         }
         $this->set(array(
             'items' => $items,
@@ -223,6 +224,10 @@ class ProfileComponentsController extends AppController {
     	$req_q  = $this->request->getQuery(); //q_data is the query data 
     	$req_d  = $this->request->getData(); //q_data is the query data 
     	
+    	if(isset($req_d['attribute_tag'])){   	
+    	    $req_d['attribute'] = $req_d['attribute'].':'.$req_d['attribute_tag'];
+    	}
+    	
     	if(isset($req_d['profile_component_id'])){
     		$req_q['comp_id'] = $req_d['profile_component_id'];
     	}
@@ -276,9 +281,13 @@ class ProfileComponentsController extends AppController {
      	
      	if(isset($req_d['profile_component_id'])){
     		$req_q['comp_id'] = $req_d['profile_component_id'];
-    	} 
-
-         if(isset($req_q['comp_id'])){
+    	}
+    	
+    	if(isset($req_d['attribute_tag'])){   	
+    	    $req_d['attribute'] = $req_d['attribute'].':'.$req_d['attribute_tag'];
+    	}
+    	
+        if(isset($req_q['comp_id'])){
 
             //Check if the type check was not changed
             if((preg_match("/^chk_/",$req_d['id']))&&($req_d['type']=='check')){ //check Type remained the same

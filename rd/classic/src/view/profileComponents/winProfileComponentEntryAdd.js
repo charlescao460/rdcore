@@ -5,7 +5,7 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryAdd', {
     draggable   : true,
     resizable   : true,
     title       : 'Add Profile Component Entry',
-    width       : 450,
+    width       : 550,
     height      : 500,
     plain       : true,
     border      : false,
@@ -97,6 +97,13 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryAdd', {
                		xtype		: 'cmbAttribute',
                		name		: 'attribute', 
                		emptyText	: i18n('sSelect_an_attribute')
+               	},
+               	{
+               	    xtype		: 'cmbAttributeTag',
+               	    hidden      : true,
+               	    disabled    : true,
+               	    name        : 'attribute_tag',
+               	    value       : 0
                	},
                	{
                		xtype		: 'combobox',

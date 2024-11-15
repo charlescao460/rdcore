@@ -577,8 +577,8 @@ class GridButtonsFlatComponent extends Component {
                     "<div style='font-size:larger;width:300px;'>",
                     "<ul class='fa-ul'>",
                     "<li style='padding:2px;'>",
-                    "<span class='fa-li' style='font-family:FontAwesome;'>&#xf20e</span> Meshes {meshes_total} <span style='color:green;'>({meshes_up} ONLINE)</span></li>",
-                    "<li style='padding:2px;'><i class='fa-li fa  fa-share-alt'></i> Mesh Nodes {nodes_total} <span style='color:green;'>({nodes_up} ONLINE)</span></li>",
+                    "<span class='fa-li' style='font-family:FontAwesome;'>&#xf20e</span> {meshes_total} NETWORKS  -<span style='color:green;'>  {meshes_up} ONLINE</span></li>",
+                    "<li style='padding:2px;'><i class='fa-li fa  fa-share-alt'></i> {nodes_total} NODES  -<span style='color:green;'>  {nodes_up} ONLINE</span></li>",
                     "</ul>",
                     "</div>"                    
                 ],
