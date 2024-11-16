@@ -14,11 +14,11 @@ class ConnectionComponent extends Component {
     public $br_int      = '';
     public $QmiActive   = false;
     public $MwanActive  = false;    
-    public $wanBridgeId = 0;
-
-    
+    public $wanBridgeId = 0;    
     public $MwanSettings= [];
-       
+    
+    //-Set this to true to return the mac in the reply (for APs who has random MACs)
+    protected  $includeMac  = false;            
     protected $vlanHack     = false;
     protected $stp          = 1;
 
@@ -119,6 +119,19 @@ class ConnectionComponent extends Component {
                     ]
             	]
             ]);
+            
+            if($this->includeMac){
+                $macAddr = $this->getController()->getRequest()->getQuery('mac');
+                $macAddr = preg_replace('/-/', ':', $macAddr);         
+                 array_push( $network,
+                    [
+                        "device" => $wanIf,
+                        "options"   => [
+                            'name'      => $wanIf,
+                            'macaddr'   => $macAddr
+                        ]
+                    ]);           
+            }
             	
 		    $wanOptions = $this->_getWanOptionsNode($node_id,$lan_bridge_flag,$gateway);
 		           
@@ -206,6 +219,19 @@ class ConnectionComponent extends Component {
                 ]
         	]
         ]);
+        
+        if($this->includeMac){
+                $macAddr = $this->getController()->getRequest()->getQuery('mac');
+                $macAddr = preg_replace('/-/', ':', $macAddr);         
+                 array_push( $network,
+                    [
+                        "device" => $wanIf,
+                        "options"   => [
+                            'name'      => $wanIf,
+                            'macaddr'   => $macAddr
+                        ]
+                    ]);           
+            }
         
         $wanOptions = $this->_getWanOptions($ap_id);
         
