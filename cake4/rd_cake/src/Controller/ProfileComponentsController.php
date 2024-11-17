@@ -73,6 +73,53 @@ class ProfileComponentsController extends AppController {
         $this->viewBuilder()->setOption('serialize', true);
     }
     
+    
+    public function indexCombo(){
+        // Authentication + Authorization
+        $user = $this->_ap_right_check();
+        if (!$user) {
+            return;
+        }
+
+        $req_q      = $this->request->getQuery();
+        $cloud_id   = $req_q['cloud_id'] ?? null;
+
+        $query      = $this->{$this->main_model}->find();
+        $this->CommonQueryFlat->cloud_with_system($query, $cloud_id, []);
+
+
+        $limit      = $req_q['limit'] ?? 50; // Default limit to 50 if not set
+        $page       = $req_q['page'] ?? 1;
+        $offset     = $req_q['start'] ?? 0;
+
+        $query->page($page)
+              ->limit($limit)
+              ->offset($offset);
+
+        $total      = $query->count();
+        $items      = [];
+
+        // Include all option if requested
+        if (!empty($req_q['include_all_option'])) {
+             if($req_q['include_all_option'] == true){
+		    	$items[] = ['id' => 0, 'name' => '**All Profile Components**'];    
+		    }         
+        }
+
+        // Fetch results and build items array
+        foreach ($query->all() as $i) {
+            $items[] = ['id' => $i->id, 'name' => $i->name];
+        }
+
+        // Final response
+        $this->set([
+            'items'      => $items,
+            'success'    => true,
+            'totalCount' => $total
+        ]);
+        $this->viewBuilder()->setOption('serialize', true);
+    }
+    
    	public function indexDataView(){
         //__ Authentication + Authorization __
         $user = $this->_ap_right_check();
@@ -562,18 +609,38 @@ class ProfileComponentsController extends AppController {
         $this->viewBuilder()->setOption('serialize', true);
 	}
 
-    public function menuForGrid()
-    {
+    public function menuForGrid(){
+    
         $user = $this->Aa->user_for_token($this);
         if (!$user) {   //If not a valid user
             return;
         }
 
-        $menu = $this->GridButtonsFlat->returnButtons( false, 'basic'); 
-        $this->set(array(
-            'items' => $menu,
-            'success' => true
-        ));
+        $menu = $this->GridButtonsFlat->returnButtons( false, 'basic');
+        
+        $cmb_sqm_profiles = [
+            'xtype'     => 'cmbProfileComponent',
+            'margin'    => '5 0 5 0',
+            'width'		=> 300,
+            'itemId'    => 'cmbProfileComponent',
+            'fieldLabel'=> '',
+            'value'		=> 0,
+            'include_all_option' => true 
+        ];
+    
+        $d = [
+        	'xtype' => 'buttongroup', 
+        	'title' => false,
+        	'items' => [
+        		$cmb_sqm_profiles                   
+        	]
+        ];         
+        $menu = [$menu,$d];
+         
+        $this->set([
+            'items'     => $menu,
+            'success'   => true
+        ]);
         $this->viewBuilder()->setOption('serialize', true);
     }
 }

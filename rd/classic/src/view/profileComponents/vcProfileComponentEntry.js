@@ -23,12 +23,21 @@ Ext.define('Rd.view.profileComponents.vcProfileComponentEntry', {
         var me 		= this;
         var record  = cmb.getSelection();
         var tag     = me.getView().down('cmbAttributeTag');
-        if(record.get('has_tag')){
-            tag.show();
-            tag.enable();
+        if(record.get('has_tag')== undefined){    //This is for edit ... when edit load the record this value is undefined    
+            if(me.getView().showTag){
+                tag.show();
+                tag.enable();            
+            }        
         }else{
-            tag.hide();
-            tag.disable();
+                
+            if(record.get('has_tag')){
+                tag.show();
+                tag.enable();
+            }else{
+                tag.hide();
+                tag.disable();
+            }
+            
         }  
     }  
     

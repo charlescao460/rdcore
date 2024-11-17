@@ -32,7 +32,7 @@ Ext.define('Rd.view.profileComponents.vcProfileComponents', {
             click   : 'del'
         },
         'pnlProfileComponents cmbProfileComponent': {
-        //   change   : 'cmbProfileComponentsChange'
+           change   : 'cmbProfileComponentChange'
         },
         'pnlProfileComponents #dvProfileComponents' : {
         	itemclick	: 'itemSelected'

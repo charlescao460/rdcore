@@ -10,10 +10,11 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
     plain       : true,
     border      : false,
     layout      : 'fit',
-    glyph       : Rd.config.icnAdd,
+    glyph       : Rd.config.icnEdit,
     autoShow    : false,
     profile_component_id : '',
     profile_component_name : '',
+    showTag     : false,
     defaults: {
             border: false
     },
@@ -26,6 +27,18 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
     controller  : 'vcProfileComponentEntry',
     initComponent: function() {
         var me 		= this; 
+        var record  = me.record.clone();
+        let attribute = record.get('attribute'); 
+        let pattern = /:/;
+        
+        if(pattern.test(attribute)){
+            console.log("Tagged Attribute");          
+            var parts = attribute.split(':');
+            record.set('attribute',parts[0]);
+            record.set('attribute_tag',parts[1])
+            me.showTag = true;         
+        }
+                
         me.setTitle('Edit Profile Component Entry For '+me.profile_component_name);	
 		var s = Ext.create('Ext.data.Store', {
             fields: ['id', 'name'],
@@ -142,7 +155,8 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryEdit', {
         });
         
         me.items = frmData;
-        frmData.loadRecord(me.record);
+             
+        frmData.loadRecord(record);
         me.callParent(arguments);
     }
 });

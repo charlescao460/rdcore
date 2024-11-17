@@ -14,6 +14,7 @@ Ext.define('Rd.view.profileComponents.winProfileComponentEntryAdd', {
     autoShow    : false,
     profile_component_id : '',
     profile_component_name : '',
+    showTag     : false,
     defaults: {
             border: false
     },
