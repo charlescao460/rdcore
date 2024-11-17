@@ -167,8 +167,10 @@ class MeshesController extends AppController{
             'metaData'      => [
                 'meshes_total'  => count($meshes_total),
                 'meshes_up'     => $meshes_up,
+                'meshes_down'   => count($meshes_total)-$meshes_up,
                 'nodes_total'   => $nodes_total,
-                'nodes_up'      => $nodes_up,  
+                'nodes_up'      => $nodes_up,
+                'nodes_down'    => $nodes_total - $nodes_up 
             ],
             'success' => true,
             'totalCount' => $total
@@ -3159,10 +3161,53 @@ class MeshesController extends AppController{
         }
 
         $menu = $this->GridButtonsFlat->returnButtons(false, 'MeshNodes'); 
-        $this->set(array(
-            'items' => $menu,
-            'success' => true
-        ));
+        
+        $menu = [ 
+            $menu,
+            [
+
+                'xtype'  => 'sparklinepie',
+                'itemId' => 'sprkPie',
+                'width'  => 40,
+                'height' => 40,
+                'margin' => 20,
+                'values' => [0.8, 0.2],
+                'sliceColors' => ['#008000', '#c27819']       
+            ],
+            [
+                'xtype'   => 'component', 
+                'itemId'  => 'totals',  
+                 'tpl'    => [
+                    "<div style='font-size:larger;width:300px;'>",
+                        '<div style="padding:2px;">',
+                            "{nodes_total} NODES",
+                        '</div>',
+                        '<div style="padding:2px;">',
+                            // Check if nodes_up is greater than zero
+                            '<tpl if="nodes_up &gt; 0">',
+                                "<span style='color:green;'>  {nodes_up} ONLINE</span>",
+                            '</tpl>',
+                            // Add a separator only if both nodes_up and nodes_down are greater than zero
+                            '<tpl if="nodes_up &gt; 0 && nodes_down &gt; 0">',
+                                " / ",
+                            '</tpl>',
+                            // Check if nodes_down is greater than zero
+                            '<tpl if="nodes_down &gt; 0">',
+                                "<span style='color:#c27819;'>  {nodes_down} OFFLINE</span>",
+                            '</tpl>',
+                        '</div>',
+                    "</div>"                  
+                ],
+                'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
+                'cls'    => 'lblRd'
+            ]            
+        ];       
+        
+        
+        $this->set([
+            'items'     => $menu,
+            'success'   => true
+        ]);
         $this->viewBuilder()->setOption('serialize', true);
     }
     

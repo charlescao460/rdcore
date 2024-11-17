@@ -3263,7 +3263,26 @@ class ApProfilesController extends AppController {
             return;
         }
 
-        $menu = $this->GridButtonsFlat->returnButtons(false, 'ApProfiles'); 
+        $menu = $this->GridButtonsFlat->returnButtons(false, 'ApProfiles');
+        
+        $menu = [ 
+            $menu,
+            [
+                'xtype'   => 'component', 
+                'itemId'  => 'totals',  
+                 'tpl'    => [
+                    "<div style='font-size:larger;width:300px;'>",
+                    "<ul class='fa-ul'>",
+                    "<li style='padding:2px;'><i class='fa-li fa  fa-cubes'></i> {meshes_total} PROFILES  -<span style='color:green;'>  {meshes_up} ONLINE</span></li>",
+                    "<li style='padding:2px;'><i class='fa-li fa  fa-cube'></i> {nodes_total} DEVICES  -<span style='color:green;'>  {nodes_up} ONLINE</span></li>",
+                    "</ul>",
+                    "</div>"                    
+                ],
+                'data'   =>  [],
+                'cls'    => 'lblRd'
+            ]
+        ];
+         
         $this->set(array(
             'items' => $menu,
             'success' => true
@@ -3310,6 +3329,37 @@ class ApProfilesController extends AppController {
         }
 
         $menu = $this->GridButtonsFlat->returnButtons(false, 'Aps'); 
+        
+        $menu = [ 
+            $menu,
+            [
+
+                'xtype'  => 'sparklinepie',
+                'itemId' => 'sprkPie',
+                'width'  => 40,
+                'height' => 40,
+                'margin' => 20,
+                'values' => [0.8, 0.2],
+                'sliceColors' => ['#008000', '#c27819']       
+            ],
+            [
+                'xtype'   => 'component', 
+                'itemId'  => 'totals',  
+                 'tpl'    => [
+                    "<div style='font-size:larger;width:300px;'>",
+                        '<div style="padding:2px;">',
+                            "{device_total} DEVICES",
+                        '</div>',
+                        '<div style="padding:2px;">',
+                            "<span style='color:green;'>  {device_up} ONLINE</span> / <span style='color:#c27819;'>  {device_down} OFFLINE</span>",
+                        '</div>',
+                    "</div>"                    
+                ],
+                'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
+                'cls'    => 'lblRd'
+            ]
+        ];
+        
         $this->set(array(
             'items' => $menu,
             'success' => true
@@ -3323,12 +3373,43 @@ class ApProfilesController extends AppController {
         if (!$user) {   //If not a valid user
             return;
         }
-
+        
         $menu = $this->GridButtonsFlat->returnButtons(false, 'ApProfileDevices'); 
-        $this->set(array(
+        
+        $menu = [ 
+            $menu,
+            [
+
+                'xtype'  => 'sparklinepie',
+                'itemId' => 'sprkPie',
+                'width'  => 40,
+                'height' => 40,
+                'margin' => 20,
+                'values' => [0.8, 0.2],
+                'sliceColors' => ['#008000', '#c27819']       
+            ],
+            [
+                'xtype'   => 'component', 
+                'itemId'  => 'totals',  
+                 'tpl'    => [
+                    "<div style='font-size:larger;width:300px;'>",
+                        '<div style="padding:2px;">',
+                            "{device_total} DEVICES",
+                        '</div>',
+                        '<div style="padding:2px;">',
+                            "<span style='color:green;'>  {device_up} ONLINE</span> / <span style='color:#c27819;'>  {device_down} OFFLINE</span>",
+                        '</div>',
+                    "</div>"                    
+                ],
+                'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
+                'cls'    => 'lblRd'
+            ]
+        ];
+
+        $this->set([
             'items' => $menu,
             'success' => true
-        ));
+        ]);
         $this->viewBuilder()->setOption('serialize', true);
     }
     

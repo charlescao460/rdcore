@@ -574,13 +574,30 @@ class GridButtonsFlatComponent extends Component {
                 'xtype'   => 'component', 
                 'itemId'  => 'totals',  
                  'tpl'    => [
-                    "<div style='font-size:larger;width:300px;'>",
-                    "<ul class='fa-ul'>",
-                    "<li style='padding:2px;'>",
-                    "<span class='fa-li' style='font-family:FontAwesome;'>&#xf20e</span> {meshes_total} NETWORKS  -<span style='color:green;'>  {meshes_up} ONLINE</span></li>",
-                    "<li style='padding:2px;'><i class='fa-li fa  fa-share-alt'></i> {nodes_total} NODES  -<span style='color:green;'>  {nodes_up} ONLINE</span></li>",
-                    "</ul>",
-                    "</div>"                    
+                     "<div style='font-size:larger;width:400px;'>",
+                        "<ul class='fa-ul'>",
+                            "<li style='padding:4px;'>",
+                                // Display meshes_total with ONLINE and OFFLINE parts
+                                "<span class='fa-li' style='font-family:FontAwesome;'>&#xf20e</span> {meshes_total} NETWORKS",
+                                "<tpl if='meshes_up &gt; 0'>",
+                                    " - <span style='color:green;'>  {meshes_up} ONLINE</span>",
+                                "</tpl>",
+                                "<tpl if='meshes_down &gt; 0'>",
+                                    " - <span style='color:#c27819;'>  {meshes_down} OFFLINE</span>",
+                                "</tpl>",
+                            "</li>",
+                            "<li style='padding:4px;'>",
+                                // Display nodes_total with ONLINE and OFFLINE parts
+                                "<i class='fa-li fa fa-share-alt'></i> {nodes_total} NODES",
+                                "<tpl if='nodes_up &gt; 0'>",
+                                    " - <span style='color:green;'>  {nodes_up} ONLINE</span>",
+                                "</tpl>",
+                                "<tpl if='nodes_down &gt; 0'>",
+                                    " - <span style='color:#c27819;'>  {nodes_down} OFFLINE</span>",
+                                "</tpl>",
+                            "</li>",
+                        "</ul>",
+                    "</div>"         
                 ],
                 'data'   =>  [],
                 'cls'    => 'lblRd'

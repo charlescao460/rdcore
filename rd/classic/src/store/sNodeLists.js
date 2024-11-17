@@ -12,7 +12,7 @@ Ext.define('Rd.store.sNodeLists', {
         url     : '/cake4/rd_cake/node-lists/index.json',
         reader: {
             type            : 'json',
-            rootProperty            : 'items',
+            rootProperty    : 'items',
             messageProperty : 'message',
             totalProperty   : 'totalCount' //Required for dynamic paging
         },
@@ -22,5 +22,5 @@ Ext.define('Rd.store.sNodeLists', {
         simpleSortMode: true //This will only sort on one column (sort) and a direction(dir) value ASC or DESC
     },
     autoLoad    : false,
-    groupField  : 'mesh'
+  //  groupField  : 'mesh'
 });

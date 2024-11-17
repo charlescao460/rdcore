@@ -7,6 +7,7 @@ use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Utility\Hash;
 use GeoIp2\Database\Reader;
+use Cake\I18n\FrozenTime;
 
 use Cake\ORM\Query;
 use Cake\Database\Expression\QueryExpression;
@@ -17,6 +18,8 @@ class NodeListsController extends AppController{
     protected $owner_tree   = [];
     protected $main_model   = 'Nodes';
     protected $dead_after   = 600; //Default
+    protected $gen_dead_after = 900; //Make this the default one 
+    
   
     public function initialize():void{  
         parent::initialize();
@@ -63,6 +66,10 @@ class NodeListsController extends AppController{
 		$query          = $this->{$this->main_model}->find();
 		$req_q    		= $this->request->getQuery();      
        	$cloud_id 		= $req_q['cloud_id'];
+       	
+       	
+       	$ft_now         = FrozenTime::now();
+        $ft_dead        = $ft_now->subSecond($this->gen_dead_after);
        	      	       	
        	if((isset($req_q['zero_flag']))&&($req_q['zero_flag']=='true')){      	
        		 $this->set([
@@ -91,8 +98,12 @@ class NodeListsController extends AppController{
         $query->limit($limit);
         $query->offset($offset);
         
-        $total = $query->count();
-        $q_r = $query->all();
+        
+        
+        $nodes_total= $query->count();
+        $q_r        = $query->all();       
+        $nodes_up   = $query->where(['Nodes.last_contact >=' => $ft_dead])->count();
+        $nodes_down = $nodes_total - $nodes_up;
         		
 	    $hardware = $this->_make_hardware_lookup();
 
@@ -399,13 +410,19 @@ class NodeListsController extends AppController{
         }
 		// Sort by node state
 		$sortedNodes = Hash::sort($items, '{s}.state', 'desc');
+	
+		
         //___ FINAL PART ___
         $this->set(array(
-            'items' => $sortedNodes, //$items,
-            'success' => true,
-            'totalCount' => $total,
+            'items'         => $sortedNodes, //$items,
+            'success'       => true,
+            'totalCount'    => $nodes_total,
              'metaData'		=> [
-            	'total'	=> $total
+            	'total'	        => $nodes_total,
+            	'nodes_total'   => $nodes_total,
+            	'nodes_up'      => $nodes_up,
+            	'nodes_down'    => $nodes_down,
+            	'sprk'          => [$nodes_up,$nodes_down]
             ]
         ));
         $this->viewBuilder()->setOption('serialize', true);           
