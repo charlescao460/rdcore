@@ -5,11 +5,12 @@ namespace App\Controller;
 use Cake\Core\Configure;
 use Exception;
 use GeoIp2\Database\Reader;
+use Cake\I18n\FrozenTime;
 
 class ApProfilesController extends AppController {
 
-    public $main_model          = 'ApProfiles';
-    public $base             = "Access Providers/Controllers/ApProfiles/";
+    public $main_model      = 'ApProfiles';
+    public $base            = "Access Providers/Controllers/ApProfiles/";
 
     public function initialize():void
     {
@@ -143,8 +144,10 @@ class ApProfilesController extends AppController {
             'metaData'      => [
                 'ap_profiles_total' => $total,
                 'ap_profiles_up'    => $meta_ap_profile_up,
+                'ap_profiles_down'  => $total - $meta_ap_profile_up,
                 'aps_total'   		=> $meta_ap_total,
-                'aps_up'      		=> $meta_ap_up,  
+                'aps_up'      		=> $meta_ap_up,
+                'aps_down'          => $meta_ap_total - $meta_ap_up   
             ],
             'success' 		=> true,
             'totalCount' 	=> $total
@@ -1872,11 +1875,15 @@ class ApProfilesController extends AppController {
         if(!$user){
             return;
         }
-
+        
         $items          = [];
         $total          = 0;
         $ap_profile_id  = $this->request->getQuery('ap_profile_id');
         
+        $deadAfter      = $this->_get_dead_after($ap_profile_id);       
+        $ft_now         = FrozenTime::now();
+        $ft_dead        = $ft_now->subSecond($deadAfter);
+           
         $conditions     = ['Aps.ap_profile_id' => $ap_profile_id];      
         $c_filter       = $this->CommonQueryFlat->get_filter_conditions('Aps');
         
@@ -1887,9 +1894,13 @@ class ApProfilesController extends AppController {
             $sort = $this->request->getQuery('sort');
             $dir  = $this->request->getQuery('dir');
             $query->order([$sort => $dir]);   
-        }                
-        $q_r   = $query->where($conditions)->all();
-
+        }
+        
+        $aps_total  = $query->where($conditions)->count(); 
+        $q_r        = $query->where($conditions)->all();       
+        $aps_up     = $query->where(['Aps.last_contact >=' => $ft_dead])->count();
+        $aps_down   = $aps_total - $aps_up;
+                       
         //Create a hardware lookup for proper names of hardware
         $hardware = [];
 	    $q_hw = $this->{'Hardwares'}->find()->where(['Hardwares.for_ap' => true])->all();
@@ -1904,11 +1915,18 @@ class ApProfilesController extends AppController {
         foreach($q_r as $m){
 
             $m->last_contact_human = '';
+            
+            $m->state = 'never';
 
             if($m->last_contact != null){
                 $m->last_contact_human  = $this->TimeCalculations->time_elapsed_string($m->last_contact);
+                if($ft_dead > $m->last_contact){
+                    $m->state = 'down';
+                }else{
+                    $m->state = 'up';
+                }
             }
-
+            
             //----              
             //Some defaults:
             $country_code   = '';
@@ -1964,6 +1982,7 @@ class ApProfilesController extends AppController {
 				'lat'			        => $m->lat,
 				'lng'			        => $m->lon,
 				'photo_file_name'	    => $m->photo_file_name,
+				'state'                 => $m->state,
 				'country_code'          => $country_code,
                 'country_name'          => $country_name,
                 'city'                  => $city,
@@ -1973,7 +1992,13 @@ class ApProfilesController extends AppController {
         //___ FINAL PART ___
         $this->set([
             'items' => $items,
-            'success' => true
+            'success' => true,
+            'metaData'		=> [
+            	'aps_total' => $aps_total,
+            	'aps_up'    => $aps_up,
+            	'aps_down'  => $aps_down,
+            	'sprk'      => [$aps_up,$aps_down]
+            ]
         ]);
         $this->viewBuilder()->setOption('serialize', true);
     }
@@ -3271,12 +3296,30 @@ class ApProfilesController extends AppController {
                 'xtype'   => 'component', 
                 'itemId'  => 'totals',  
                  'tpl'    => [
-                    "<div style='font-size:larger;width:300px;'>",
-                    "<ul class='fa-ul'>",
-                    "<li style='padding:2px;'><i class='fa-li fa  fa-cubes'></i> {meshes_total} PROFILES  -<span style='color:green;'>  {meshes_up} ONLINE</span></li>",
-                    "<li style='padding:2px;'><i class='fa-li fa  fa-cube'></i> {nodes_total} DEVICES  -<span style='color:green;'>  {nodes_up} ONLINE</span></li>",
-                    "</ul>",
-                    "</div>"                    
+                    "<div style='font-size:larger;width:400px;'>",
+                        "<ul class='fa-ul'>",
+                            "<li style='padding:4px;'>",
+                                // Display ap_profiles_total with ONLINE and OFFLINE parts
+                                "<i class='fa-li fa fa-cubes'></i> {ap_profiles_total} PROFILES",
+                                "<tpl if='ap_profiles_up &gt; 0'>",
+                                    " - <span style='color:green;'>  {ap_profiles_up} ONLINE</span>",
+                                "</tpl>",
+                                "<tpl if='ap_profiles_down &gt; 0'>",
+                                    " - <span style='color:#c27819;'>  {ap_profiles_down} OFFLINE</span>",
+                                "</tpl>",
+                            "</li>",
+                            "<li style='padding:4px;'>",
+                                // Display aps_total with ONLINE and OFFLINE parts
+                                "<i class='fa-li fa fa-cube'></i> {aps_total} DEVICES",
+                                "<tpl if='aps_up &gt; 0'>",
+                                    " - <span style='color:green;'>  {aps_up} ONLINE</span>",
+                                "</tpl>",
+                                "<tpl if='aps_down &gt; 0'>",
+                                    " - <span style='color:#c27819;'>  {aps_down} OFFLINE</span>",
+                                "</tpl>",
+                            "</li>",
+                        "</ul>",
+                    "</div>"                   
                 ],
                 'data'   =>  [],
                 'cls'    => 'lblRd'
@@ -3348,14 +3391,25 @@ class ApProfilesController extends AppController {
                  'tpl'    => [
                     "<div style='font-size:larger;width:300px;'>",
                         '<div style="padding:2px;">',
-                            "{device_total} DEVICES",
+                            "{aps_total} DEVICES",
                         '</div>',
                         '<div style="padding:2px;">',
-                            "<span style='color:green;'>  {device_up} ONLINE</span> / <span style='color:#c27819;'>  {device_down} OFFLINE</span>",
+                            // Check if aps_up is greater than zero
+                            '<tpl if="aps_up &gt; 0">',
+                                "<span style='color:green;'>  {aps_up} ONLINE</span>",
+                            '</tpl>',
+                            // Add a separator only if both aps_up and nodes_down are greater than zero
+                            '<tpl if="aps_up &gt; 0 && aps_down &gt; 0">',
+                                " / ",
+                            '</tpl>',
+                            // Check if nodes_down is greater than zero
+                            '<tpl if="aps_down &gt; 0">',
+                                "<span style='color:#c27819;'>  {aps_down} OFFLINE</span>",
+                            '</tpl>',
                         '</div>',
-                    "</div>"                    
+                    "</div>"                           
                 ],
-                'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
+                'data'   =>  [],
                 'cls'    => 'lblRd'
             ]
         ];
@@ -3394,12 +3448,23 @@ class ApProfilesController extends AppController {
                  'tpl'    => [
                     "<div style='font-size:larger;width:300px;'>",
                         '<div style="padding:2px;">',
-                            "{device_total} DEVICES",
+                            "{aps_total} DEVICES",
                         '</div>',
                         '<div style="padding:2px;">',
-                            "<span style='color:green;'>  {device_up} ONLINE</span> / <span style='color:#c27819;'>  {device_down} OFFLINE</span>",
+                            // Check if aps_up is greater than zero
+                            '<tpl if="aps_up &gt; 0">',
+                                "<span style='color:green;'>  {aps_up} ONLINE</span>",
+                            '</tpl>',
+                            // Add a separator only if both aps_up and nodes_down are greater than zero
+                            '<tpl if="aps_up &gt; 0 && aps_down &gt; 0">',
+                                " / ",
+                            '</tpl>',
+                            // Check if nodes_down is greater than zero
+                            '<tpl if="aps_down &gt; 0">',
+                                "<span style='color:#c27819;'>  {aps_down} OFFLINE</span>",
+                            '</tpl>',
                         '</div>',
-                    "</div>"                    
+                    "</div>"                         
                 ],
                 'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
                 'cls'    => 'lblRd'

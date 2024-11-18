@@ -3198,7 +3198,7 @@ class MeshesController extends AppController{
                         '</div>',
                     "</div>"                  
                 ],
-                'data'   =>  ['nodes_total' => 100, 'nodes_up' => 80, 'nodes_down' => 20],
+                'data'   =>  [],
                 'cls'    => 'lblRd'
             ]            
         ];       

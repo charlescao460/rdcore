@@ -2,7 +2,6 @@ Ext.define('Rd.view.aps.gridApProfiles' ,{
     extend      :'Ext.grid.Panel',
     alias       : 'widget.gridApProfiles',
     multiSelect : true,
-    store       : 'sApProfiles',
     stateful    : true,
     stateId     : 'StateGridApProfiles',
     stateEvents :['groupclick','columnhide'],
@@ -19,6 +18,19 @@ Ext.define('Rd.view.aps.gridApProfiles' ,{
     plugins     : 'gridfilters',  //*We specify this
     initComponent: function(){
         var me  = this;
+        
+        me.store    = Ext.create('Rd.store.sApProfiles',{
+            listeners: {
+                metachange : function(store, metaData) {                   
+                    if(me.down('#totals')){ 
+                        me.down('#totals').setData(metaData);
+                    } 
+                },
+                scope: me
+            },
+            autoLoad: true 
+        });
+           
         me.bbar = [{
             xtype       : 'pagingtoolbar',
             store       : me.store,

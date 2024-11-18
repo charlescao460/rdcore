@@ -5,7 +5,6 @@ Ext.define('Rd.view.aps.gridApLists' ,{
     stateful	: true,
     stateId		: 'StateGridApLists',
     stateEvents	: ['groupclick','columnhide'],
-    store       : 'sApLists',
     border		: false,
     requires	: [
         'Rd.view.components.ajaxToolbar',
@@ -94,7 +93,22 @@ Ext.define('Rd.view.aps.gridApLists' ,{
         }
     },
     initComponent: function(){
-        var me  = this;  
+        var me  = this;
+        
+        me.store    = Ext.create('Rd.store.sApLists',{
+            listeners: {
+                metachange : function(store, metaData) {                   
+                    if(me.down('#totals')){ 
+                        me.down('#totals').setData(metaData);
+                        me.down('#sprkPie').setValues(metaData.sprk);
+                    } 
+                },
+                scope: me
+            },
+            autoLoad: true 
+        }); 
+        
+          
         me.bbar = [{
             xtype       : 'pagingtoolbar',
             store       : me.store,

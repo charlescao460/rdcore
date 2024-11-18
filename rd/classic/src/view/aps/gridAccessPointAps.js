@@ -18,8 +18,21 @@ Ext.define('Rd.view.aps.gridAccessPointAps' ,{
     urlMenu: '/cake4/rd_cake/ap-profiles/menu_for_devices_grid.json',
     plugins     : 'gridfilters',  //*We specify this
     initComponent: function(){
-        var me      = this;
-        me.store    = Ext.create('Rd.store.sAps',{});
+        var me      = this;      
+        me.store    = Ext.create('Rd.store.sAps',{
+            listeners: {
+                metachange : function(store, metaData) {                   
+                    if(me.down('#totals')){ 
+                        me.down('#totals').setData(metaData);
+                        me.down('#sprkPie').setValues(metaData.sprk);
+                    } 
+                },
+                scope: me
+            },
+            autoLoad: false
+        }); 
+        
+        
         me.store.getProxy().setExtraParam('ap_profile_id',me.apProfileId);
         me.store.load();
         me.bbar = [{
@@ -55,24 +68,23 @@ Ext.define('Rd.view.aps.gridAccessPointAps' ,{
                 dataIndex   : 'last_contact',  
                 tdCls       : 'gridTree', 
                 flex        : 1,
-                renderer    : function(v,metaData, record){
-                    if(record.get('last_contact') == null){
-                        return "<div class=\"fieldBlueWhite\">Never</div>";
-                    }
-                    var last_contact_human  = record.get('last_contact_human');
-                    var green_flag          = false; //We show contact from the last seconds and minutes as geeen
-                    if(
-                        (last_contact_human.match(/just now/g))||
-                        (last_contact_human.match(/minute/g))||
-                        (last_contact_human.match(/second/g))
-                    ){
-                        green_flag = true;
-                    }
-                    if(green_flag){
-                        return "<div class=\"fieldGreenWhite\">"+last_contact_human+"</div>";
+                renderer    : function(v,metaData, record){    
+                    var heartbeat;
+                    var value =  record.get('state');
+                    if(value != 'never'){                    
+                        var last_contact     = record.get('last_contact_human');
+                        if(value == 'up'){
+                            heartbeat =  "<div class=\"fieldGreen\">"+last_contact+"</div>";
+                        }
+                        if(value == 'down'){
+                            heartbeat = "<div class=\"fieldRed\">"+last_contact+"</div>";
+                        }
+
                     }else{
-                        return "<div class=\"fieldPurpleWhite\">"+last_contact_human+"</div>";
-                    }          
+                        heartbeat = "<div class=\"fieldBlue\">Never</div>";
+                    }
+                    return heartbeat;
+                                 
                 },stateId: 'StateGAPD6'
             },     
             { 

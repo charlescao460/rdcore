@@ -18,7 +18,7 @@ class NodeListsController extends AppController{
     protected $owner_tree   = [];
     protected $main_model   = 'Nodes';
     protected $dead_after   = 600; //Default
-    protected $gen_dead_after = 900; //Make this the default one 
+    protected $gen_dead_after = 600; //Make this the default one 
     
   
     public function initialize():void{  

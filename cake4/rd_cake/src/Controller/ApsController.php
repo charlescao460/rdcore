@@ -5,6 +5,8 @@ namespace App\Controller;
 use Cake\Core\Configure;
 use GeoIp2\Database\Reader;
 
+use Cake\I18n\FrozenTime;
+
 class ApsController extends AppController {
 
     public $main_model        = 'Aps';
@@ -18,6 +20,8 @@ class ApsController extends AppController {
     protected $special_mac = "30-B5-C2-B3-80-B1"; //hack
 
     protected $l3_vlans = []; //Layer three VLAN interfaces
+    
+    protected $gen_dead_after = 600; //Make this the default one 
 
     public function initialize():void
     {
@@ -65,7 +69,7 @@ class ApsController extends AppController {
             'ApConnectionSettings'
         ],'Aps');
         
-            
+                  
         $q_r    	= $query->all();
 
         //Headings
@@ -156,13 +160,20 @@ class ApsController extends AppController {
             $page   = $this->request->getQuery('page');
             $offset = $this->request->getQuery('start');
         }
+        
+        $ft_now  = FrozenTime::now();
+        $ft_dead = $ft_now->subSecond($this->gen_dead_after);
+        
 
         $query->page($page);
         $query->limit($limit);
         $query->offset($offset);
+        
+        $aps_total  = $query->count();
+        $q_r        = $query->all();       
+        $aps_up     = $query->where(['Aps.last_contact >=' => $ft_dead])->count();
+        $aps_down   = $aps_total - $aps_up;
 
-        $total = $query->count();
-        $q_r = $query->all();
 
         $items  = [];
         //Create a hardware lookup for proper names of hardware
@@ -488,9 +499,13 @@ class ApsController extends AppController {
         $this->set([
             'items'         => $items,
             'success'       => true,
-            'totalCount'    => $total,
+            'totalCount'    => $aps_total,
             'metaData'		=> [
-            	'total'	=> $total
+            	'total'	    => $aps_total,
+            	'aps_total' => $aps_total,
+            	'aps_down'  => $aps_down,
+            	'aps_up'    => $aps_up,
+            	'sprk'      => [$aps_up,$aps_down]
             ]
         ]);
         $this->viewBuilder()->setOption('serialize', true);
