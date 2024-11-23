@@ -790,14 +790,24 @@ class ConnectionComponent extends Component {
 	
 	private function _buildCollectdConfig($mwanInterfaces){
 	
-	    $if_lists = [];
+	    $if_lists       = [];
+	    $wwanCounter    = 0;
 	     
 	    foreach($mwanInterfaces as $mwanInterface){
+	    
 	        if($mwanInterface->type == 'ethernet'){
 	            $if_lists[] = 'br-mw'.$mwanInterface->id;     
-	        }else{
+	        }
+	        
+	        if($mwanInterface->type == 'lte'){
+	            $if_lists[] = 'wwan'.$wwanCounter;
+	            $wwanCounter++;    
+	        }
+	        
+	        if($mwanInterface->type == 'wifi'){
 	            $if_lists[] = 'mw'.$mwanInterface->id;
 	        }
+	        
 	    }
 	
 	    $config = [

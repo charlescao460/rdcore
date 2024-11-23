@@ -44,9 +44,6 @@ function main(){
                     if(isset($_POST['wbw_info'])){
                         _addWbwInfo($node->id);
                     }
-                    if(isset($_POST['flows'])){
-                        _addSoftflowLogs($node);
-                    }
                     if(isset($_POST['qmi_info'])){
                         _addQmiInfo($node->id);
                     }
@@ -55,6 +52,11 @@ function main(){
                         _addOpenVpn($vpn_info,$node);
                     }
                     
+                    if(isset($_POST['wan_stats'])){
+                        $wan_stats = $_POST['wan_stats'];
+                        _addWanStats($wan_stats,$node);
+                    }
+                                        
                     _doLightReport($node);                   
                 }
                 if($report_type == 'full'){
@@ -202,55 +204,6 @@ function _getAwaitingCommands($id){
     return $items;
 }
 
-function _addSoftflowLogs($node){
-
-	global $conn,$mode;
-    $flows = $_POST['flows'];   
-    foreach ($flows as $fl){ 
-
-		if($mode == 'mesh'){
-		    $stmt = $conn->prepare("INSERT into temp_flow_logs (node_id,mesh_id,username,proto,src_mac,src_ip,src_port,dst_ip,dst_port,oct_in,pckt_in,oct_out,pckt_out,start,finish) VALUES(:node_id,:mesh_id,:username,:proto,:src_mac,:src_ip,:src_port,:dst_ip,:dst_port,:oct_in,:pckt_in,:oct_out,:pckt_out,:start,:finish)");
-		    $stmt->execute([
-		        'node_id'   => $node->id,
-		        'mesh_id'   => $node->mesh_id,
-		        'username'  => $fl['username'],
-		        'proto'     => $fl['proto'],
-		        'src_mac'   => $fl['src_mac'],
-		        'src_ip'    => $fl['src_ip'],
-		        'src_port'  => $fl['src_port'],
-		        'dst_ip'    => $fl['dst_ip'],
-		        'dst_port'  => $fl['dst_port'],
-		        'oct_in'    => $fl['oct_in'],
-		        'pckt_in'   => $fl['pckt_in'],
-		        'oct_out'   => $fl['oct_out'],
-		        'pckt_out'  => $fl['pckt_out'],
-		        'start'     => $fl['start'],
-		        'finish'    => $fl['finish'],
-		    ]);      
-		}
-		
-		if($mode == 'ap'){
-		    $stmt = $conn->prepare("INSERT into temp_flow_logs (ap_id,ap_profile_id,username,proto,src_mac,src_ip,src_port,dst_ip,dst_port,oct_in,pckt_in,oct_out,pckt_out,start,finish) VALUES(:ap_id,:ap_profile_id,:username,:proto,:src_mac,:src_ip,:src_port,:dst_ip,:dst_port,:oct_in,:pckt_in,:oct_out,:pckt_out,:start,:finish)");
-		    $stmt->execute([
-		        'ap_id'   		=> $node->id,
-		        'ap_profile_id' => $node->ap_profile_id,
-		        'username'  	=> $fl['username'],
-		        'proto'     	=> $fl['proto'],
-		        'src_mac'   	=> $fl['src_mac'],
-		        'src_ip'    	=> $fl['src_ip'],
-		        'src_port'  	=> $fl['src_port'],
-		        'dst_ip'    	=> $fl['dst_ip'],
-		        'dst_port'  	=> $fl['dst_port'],
-		        'oct_in'    	=> $fl['oct_in'],
-		        'pckt_in'   	=> $fl['pckt_in'],
-		        'oct_out'   	=> $fl['oct_out'],
-		        'pckt_out'  	=> $fl['pckt_out'],
-		        'start'     	=> $fl['start'],
-		        'finish'    	=> $fl['finish'],
-		    ]);       
-		}        
-    } 
-}
 
 function _addWbwInfo($id){
 
@@ -380,6 +333,121 @@ function _addOpenVpn($vpn_info,$node){
             $stmt->execute(['id' => $result->id,'last_contact_to_server' =>$date, 'state'=> $vpn_state]);   
         }
     }
+}
+
+function _addWanStats($wan_stats,$node){
+
+    global $conn,$mode;
+    
+    $ap_id      = null;
+    $node_id    = $node->id;
+     
+    if($mode == 'ap'){
+        $node_id    = null;
+        $ap_id      = $node->id;
+    }
+     
+     //--First the usage stats--
+     if(isset($wan_stats['usage'])){
+        foreach($wan_stats['usage'] as $usageEntry){
+        
+            $stats      = $usageEntry['statistics'];
+            $interface  = $usageEntry['interface'];
+            if($interface == 'lan'){
+                $interface = 0;
+            }
+            $interface  = str_replace('mw','',$interface);
+            
+            $stats = array_merge(
+                ['node_id' => $node_id, 'ap_id' => $ap_id,'mwan_interface_id' => $interface], 
+                $stats
+            );
+            
+            $stmt = $conn->prepare("CALL InsertWanTrafficStats(:ap_id, :node_id, :mwan_interface_id, :tx_bytes, :rx_bytes, :tx_packets, :rx_packets)");
+            $stmt->bindParam(':ap_id', $ap_id);
+            $stmt->bindParam(':node_id', $node_id);
+            $stmt->bindParam(':mwan_interface_id', $interface);
+            $stmt->bindParam(':tx_bytes', $stats['tx_bytes']);
+            $stmt->bindParam(':rx_bytes', $stats['rx_bytes']);
+            $stmt->bindParam(':tx_packets', $stats['tx_packets']);
+            $stmt->bindParam(':rx_packets', $stats['rx_packets']);
+            $stmt->execute();
+                 
+        }
+        
+        //--LTE report (if present)
+        if(isset($wan_stats['lteSignal'])){
+             foreach($wan_stats['lteSignal'] as $lteEntry){
+        
+                $interface  = $lteEntry['interface'];
+                $interface  = str_replace('mw','',$interface); 
+                                           
+                $stmt       = $conn->prepare("INSERT INTO wan_lte_stats (ap_id, node_id, mwan_interface_id,mcc,mnc,rsrp,rsrq,rssi,snr,type)  VALUES(:ap_id, :node_id, :interface, :mcc, :mnc, :rsrp, :rsrq, :rssi, :snr, :type)");             
+                $lteData    = [
+                    'ap_id'     => $ap_id,
+                    'node_id'   => $node_id,
+                    'interface' => $interface,
+                    'mcc'       => $lteEntry['system']['lte']['mcc'],
+                    'mnc'       => $lteEntry['system']['lte']['mnc'],
+                    'rsrp'      => $lteEntry['signal']['rsrp'],
+                    'rsrq'      => $lteEntry['signal']['rsrq'],
+                    'rssi'      => $lteEntry['signal']['rssi'],
+                    'snr'       => $lteEntry['signal']['snr'],
+                    'type'      => $lteEntry['signal']['type']              
+                ];
+                $stmt->execute($lteData);       
+            }
+        
+        } 
+        
+        //--WIFI report (if present)
+        if(isset($wan_stats['wifiSignal'])){
+             foreach($wan_stats['wifiSignal'] as $wifiEntry){     
+                $interface  = $wifiEntry['interface'];
+                $wifiEntry['interface'] = str_replace('mw','',$interface);
+                $wifiEntry['ap_id']     = $ap_id;
+                $wifiEntry['node_id']   = $node_id; 
+                                                           
+                $stmt       = $conn->prepare("INSERT INTO wan_wifi_stats (ap_id, node_id, mwan_interface_id, noise ,ssid ,rx_packets ,tx_packets ,`signal` ,bitrate ,txpower ,tx_rate ,channel ,quality ,rx_rate)  VALUES(:ap_id ,:node_id ,:interface ,:noise ,:ssid ,:rx_packets ,:tx_packets ,:signal ,:bitrate ,:txpower ,:tx_rate ,:channel ,:quality ,:rx_rate)");             
+                
+                $stmt->execute($wifiEntry);       
+            }
+        }
+        
+        //--MWAN3 entry (if present)
+        if(isset($wan_stats['mwanStatus'])){
+        
+            
+            $mwanData = [
+                'ap_id'    => $ap_id,
+                'node_id'  => $node_id,
+                'mwan3_status' =>  json_encode($wan_stats['mwanStatus'])
+            ];
+        
+            // Check if the record exists
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM wan_mwan3_status WHERE ap_id = :ap_id OR node_id = :node_id");
+            $stmt->execute(['ap_id' => $ap_id, 'node_id' => $node_id]);
+            $exists = $stmt->fetchColumn() > 0;
+
+            if ($exists) {
+                // Update the existing record
+                $stmt = $conn->prepare("
+                    UPDATE wan_mwan3_status
+                    SET mwan3_status = :mwan3_status,
+                    modified = now()
+                    WHERE ap_id = :ap_id OR node_id = :node_id
+                ");
+            } else {
+                // Insert a new record
+                $stmt = $conn->prepare("
+                    INSERT INTO wan_mwan3_status (ap_id, node_id, mwan3_status)
+                    VALUES (:ap_id, :node_id, :mwan3_status)
+                ");
+            }
+
+            $stmt->execute($mwanData);     
+        }                       
+     }
 }
 
 
