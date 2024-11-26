@@ -380,7 +380,11 @@ function _addWanStats($wan_stats,$node){
              foreach($wan_stats['lteSignal'] as $lteEntry){
         
                 $interface  = $lteEntry['interface'];
-                $interface  = str_replace('mw','',$interface); 
+                $interface  = str_replace('mw','',$interface);
+                 
+                if (!isset($lteEntry['system']['lte']) || !isset($lteEntry['signal']['type'])) { //Sometimes the modem hangs
+                    continue;
+                }
                                            
                 $stmt       = $conn->prepare("INSERT INTO wan_lte_stats (ap_id, node_id, mwan_interface_id,mcc,mnc,rsrp,rsrq,rssi,snr,type)  VALUES(:ap_id, :node_id, :interface, :mcc, :mnc, :rsrp, :rsrq, :rssi, :snr, :type)");             
                 $lteData    = [

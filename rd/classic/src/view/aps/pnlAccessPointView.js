@@ -9,6 +9,8 @@ Ext.define('Rd.view.aps.pnlAccessPointView', {
     apName      : undefined,
     requires    : [
         'Rd.view.aps.pnlApViewEntries',
+        'Rd.view.aps.pnlApViewSqm',
+        'Rd.view.aps.pnlApViewWan',
         'Rd.view.aps.pnlApViewHardware',
         'Rd.view.aps.gridApViewActions',
         'Rd.view.aps.pnlApViewSqm'
@@ -17,25 +19,31 @@ Ext.define('Rd.view.aps.pnlAccessPointView', {
         var me      = this;
         me.items    = [
             {
-                title   : 'SSID &#8660; Device',
+                title   : 'SSID &#8660; DEVICE',
                 itemId  : 'tabApViewEntries',
                 xtype   : 'pnlApViewEntries',
                 apId    : me.ap_id
             },
             {
-                title   : 'SQM Stats',
+                title   : 'SQM STATS',
                 itemId  : 'tabApViewSqm',
                 xtype   : 'pnlApViewSqm',
                 apId    : me.ap_id
             },
+            {
+                title   : 'WAN STATS',
+                itemId  : 'tabApViewWan',
+                xtype   : 'pnlApViewWan',
+                apId    : me.ap_id
+            },
 		    {
-                title   : 'Hardware',
+                title   : 'HARDWARE',
                 itemId  : 'tabApViewHardware',
                 xtype   : 'pnlApViewHardware',
                 apId    : me.ap_id
             },
             {
-                title   : "Command Execution",
+                title   : "COMMAND EXECUTION",
                 itemId  : 'tabApViewActions',
                 xtype   : 'gridApViewActions',
                 apId    : me.ap_id
