@@ -11,7 +11,7 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         }  
     },
     config: {
-        span            : 'hour', //hour, day, week
+        span            : 'small', //small, medium, large
         selectedId      : null,
     }, 
     control: {
@@ -91,15 +91,16 @@ Ext.define('Rd.view.aps.vcApViewWan', {
     updateGraph: function(record){
         var me = this;
         console.log("Update Graph")
-      /*  var totals = record.get('totals');
-        var graph  = record.get('graph_items');
-        me.getView().down('#plrPackets').getStore().setData([
-                { category: 'Processed Packets', count: totals.processed },
-                { category: 'Dropped Packets', count: totals.drops }
-        ]);
+        var totals = record.get('traffic_totals');
+        var graph  = record.get('graph_traffic_items');
+        
+        if(totals){
+            me.getView().down('#pnlTraffic').setData(totals);
+        }
+        
         if(graph){
-           me.getView().down('#crtPackets').getStore().setData(graph);
+           me.getView().down('#crtTraffic').getStore().setData(graph);
          
-        }*/
+        }
     }   
 });

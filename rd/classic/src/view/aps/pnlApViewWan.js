@@ -15,43 +15,46 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
     initComponent: function(){
         var me = this;
         
-        var scale = 'medium';
+        var scale = 'large';
         
-        me.tbar  = [
-            {   
-                xtype   : 'button', 
-                glyph   : Rd.config.icnReload , 
-                scale   : scale, 
-                itemId  : 'reload',   
-                tooltip : i18n('sReload')
-            },
-            '|',
-            {   
-                xtype       : 'button', 
-                text        : '15 Minutes',    
-                toggleGroup : 'time_n', 
-                enableToggle : true,
-                scale       : scale, 
-                itemId      : 'small', 
-                pressed     : true
-            },
-            { 
-                xtype       : 'button', 
-                text        : '30 Minutes',   
-                toggleGroup : 'time_n', 
-                enableToggle : true, 
-                scale       : scale, 
-                itemId      : 'medium'
-            },       
-            { 
-                xtype       : 'button', 
-                text        : '1 Hour',     
-                toggleGroup : 'time_n', 
-                enableToggle : true, 
-                scale       : scale, 
-                itemId      : 'large'
-            }         
-        ];
+        me.tbar  = [{   
+            xtype   : 'buttongroup',
+            items   : [
+               {   
+                    xtype   : 'button', 
+                    glyph   : Rd.config.icnReload , 
+                    scale   : scale, 
+                    itemId  : 'reload',   
+                    tooltip : i18n('sReload')
+                },
+               // '|',
+                {   
+                    xtype       : 'button', 
+                    text        : '15 Minutes',    
+                    toggleGroup : 'time_n', 
+                    enableToggle : true,
+                    scale       : scale, 
+                    itemId      : 'small', 
+                    pressed     : true
+                },
+                { 
+                    xtype       : 'button', 
+                    text        : '30 Minutes',   
+                    toggleGroup : 'time_n', 
+                    enableToggle : true, 
+                    scale       : scale, 
+                    itemId      : 'medium'
+                },       
+                { 
+                    xtype       : 'button', 
+                    text        : '60 Minutes',     
+                    toggleGroup : 'time_n', 
+                    enableToggle : true, 
+                    scale       : scale, 
+                    itemId      : 'large'
+                }
+            ]
+        }]
             
         me.store = Ext.create('Ext.data.Store',{
             model: 'Rd.model.mDynamicPhoto',
@@ -83,29 +86,60 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
         
         var tpl = new Ext.XTemplate(
             '<tpl for=".">',
-                '<div class="dataview-item">',
-                    '<h2 class="dataview-heading">',
-                    '<tpl if="type==\'ethernet\'">',
-        				'<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-sitemap"></i> {name} ',
-        			'</tpl>',
-        			'<tpl if="type==\'lte\'">',
-        				'<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-signal"></i> {name} ',
-        			'</tpl>',
-        			'<tpl if="type==\'wifi\'">',
-        				'<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-wifi"></i> {name} ',
-        			'</tpl>',
-                    '</h2>',
+                '<div class="plain-wrap">',
+                    '<div class="sub">',
+                        '<tpl if="type==\'ethernet\'">',
+                            '<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-sitemap"></i> {name} ',
+                        '</tpl>',
+                        '<tpl if="type==\'lte\'">',
+                            '<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-signal"></i> {name} ',
+                        '</tpl>',
+                        '<tpl if="type==\'wifi\'">',
+                            '<div style="font-size:25px;color:#9999c7;text-align:left;padding-left:20px;padding-top:10px;"><i class="fa fa-wifi"></i> {name} ',
+                        '</tpl>',               			
+                        '</div>',
+                        '<tpl if="apply_sqm_profile">',
+                            '<div style="padding-top:5px;"></div>',
+                            '<div style="font-size:16px;color:blue;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+		                        '<span style="font-family:FontAwesome;">&#xf00a</span>',
+		                        '  {sqm_profile.name}',
+	                        '</div>',				                			              
+                        '</tpl>',
+                        
+                        '<div style="padding-top:10px;"></div>',
+                        '<tpl if="status==\'online\'">',
+		        	        '<div style="font-size:16px;color:green;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                				'<span style="font-family:FontAwesome;">&#xf111;</span>',
+                				' Online for {[Ext.ux.formatDuration(values.online)]}',
+                			'</div>',
+                	    '</tpl>',
+                	    '<tpl if="status==\'offline\'">',
+		        	        '<div style="font-size:16px;color:orange;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                				'<span style="font-family:FontAwesome;">&#xf10c;</span>',
+                				' Offline for {[Ext.ux.formatDuration(values.offline)]}',
+                			'</div>',
+                	    '</tpl>',
+                	    '<tpl if="status==\'notracking\'">',
+		        	        '<div style="font-size:16px;color:grey;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                				'<span style="font-family:FontAwesome;">&#xf1db;</span>',
+                				' NO TRACKING',
+                			'</div>',
+                	    '</tpl>',               	 
+	        	        '<div style="font-size:16px;color:grey;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+            				'<span style="font-family:FontAwesome;">&#xf0c1;</span>',
+            				'<i> Interface up for {[Ext.ux.formatDuration(values.uptime)]}</i>',
+            			'</div>',                                                                                       
+                    '</div>',			    	    			    	    			                				                		        					        	         	
                 '</div>',
             '</tpl>'
         );
         
-
         var v = Ext.create('Ext.view.View', {
             store       : me.store,
             multiSelect : true,
             tpl         : tpl,
-            cls         : 'custom-dataview', // Apply the custom CSS class here
-            itemSelector: 'div.dataview-item',
+           // cls         : 'custom-dataview', // Apply the custom CSS class here
+            itemSelector: 'div.plain-wrap',
             itemId		: 'dvApViewWan',
             emptyText   : 'No WAN Stats Available'
         });

@@ -13,6 +13,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Utility\Inflector;
 use Cake\I18n\FrozenTime;
 use Cake\I18n\Time;
+use Cake\Chronos\ChronosInterval;
 
 class WanReportsController extends AppController {
 
@@ -51,13 +52,17 @@ class WanReportsController extends AppController {
         $data   = [];        
         $ap_id  = $this->request->getQuery('ap_id');
         $this->_setTimeZone();
+        
+        if($this->request->getQuery('span')){
+            $this->span = $this->request->getQuery('span');
+        }
               
         if($ap_id){
         
             $ap_profile = $this->{'Aps'}->find()
                 ->contain([
                     'MultiWanProfiles' => [
-                        'MwanInterfaces'
+                        'MwanInterfaces' => ['SqmProfiles']
                     ],
                     'WanMwan3Status'
                 ])
@@ -77,10 +82,26 @@ class WanReportsController extends AppController {
                  
                     if (isset($mwanStatusData->interfaces)){
                         if(isset($mwanStatusData->interfaces->{'mw'.$mwanInterface->id})){
+                        
+                            //We assume there should be some traffic stats for this interface
+                            if($this->span == 'small'){
+                                $stats = $this->_get15MinData($ap_id, $mwanInterface->id);
+                            }
+                            
+                            if($this->span == 'medium'){
+                                $stats = $this->_get30MinData($ap_id, $mwanInterface->id);
+                            }
+                            
+                            if($this->span == 'large'){
+                                $stats = $this->_get60MinData($ap_id, $mwanInterface->id);
+                            }
+                                                                                                                                  
                             $mwanI= (object) array_merge($mwanInterface->toArray(), (array) $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             //$mwanInterface = (object) ($mwanInterface + $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
+                            $mwanI->graph_traffic_items = $stats['items'];
+                            $mwanI->traffic_totals      = $stats['totals'];
                         }
-                    }                                 
+                    }                                                    
                     $data[] = $mwanI;            
                 } 
             }               
@@ -168,55 +189,45 @@ class WanReportsController extends AppController {
      
     }
     
-    private function _getData($apId, $apProfileExitId, $interval, $duration){
-        $items = [];
-        $start = 1;
-        $currentTime = FrozenTime::now();
-        $slotStart = $currentTime->subHours($duration);
+    private function _getTrafficData($apId, $mwanInterfaceId, $interval, $duration){
+        $items          = [];
+        $start          = 1;
+        $currentTime    = FrozenTime::now();
+        $slotStart      = $currentTime->subMinutes($duration);
 
-        $totalBytes = 0;
-        $totalPackets = 0;
-        $totalDrops = 0;
-        $totalOverlimits = 0;
+        $dataTotal      = 0;
+        $dataIn         = 0;
+        $dataOut        = 0;
+        $totalPackets   = 0;
 
         while ($slotStart < $currentTime) {
             $slotEnd = $slotStart->copy()->addMinutes($interval)->subSecond(1);
             $formattedSlotStart = $slotStart->i18nFormat("E\nHH:mm", $this->time_zone);
 
             $whereConditions = [
-                'ApSqmStats.ap_id' => $apId,
-                'ApSqmStats.ap_profile_exit_id' => $apProfileExitId,
+                'WanTrafficStats.ap_id' => $apId,
+                'WanTrafficStats.mwan_interface_id' => $mwanInterfaceId,
                 'modified >=' => $slotStart,
                 'modified <=' => $slotEnd
             ];
 
-            $query = $this->{'ApSqmStats'}->find();
+            $query = $this->{'WanTrafficStats'}->find();
             $result = $query->select([
-                'bytes'         => $query->func()->sum('bytes'),
-                'packets'       => $query->func()->sum('packets'),
-                'drops'         => $query->func()->sum('drops'),
-                'overlimits'    => $query->func()->sum('overlimits'),
-                'backlog'       => $query->func()->max('backlog'),
-                'qlen'          => $query->func()->max('qlen'),
-                'memory_used'   => $query->func()->max('memory_used'),
-                'peak_delay_us' => $query->func()->max('peak_delay_us'),
-                'avg_delay_us'  => $query->func()->max('avg_delay_us'),
-                'base_delay_us' => $query->func()->max('base_delay_us'),
-                'way_misses'    => $query->func()->max('way_misses'),
-                'way_indirect_hits' => $query->func()->max('way_indirect_hits')
+                'delta_tx_bytes'    => $query->func()->sum('delta_tx_bytes'),
+                'delta_rx_bytes'    => $query->func()->sum('delta_rx_bytes'),
+                'delta_tx_packets'  => $query->func()->sum('delta_tx_packets'),
+                'delta_rx_packets'  => $query->func()->sum('delta_rx_packets'),
+               
             ])->where($whereConditions)->first();
 
             if ($result) {
                 $result->id = $start;
                 $result->slot_start_txt = $formattedSlotStart;
-                $result->time_unit = $formattedSlotStart;
+                $result->time_unit      = $formattedSlotStart;
 
                 // Define the list of properties to cast to integers
                 $propertiesToCast = [
-                    'bytes', 'packets', 'drops', 'overlimits', 
-                    'backlog', 'qlen', 'memory_used', 
-                    'peak_delay_us', 'avg_delay_us', 'base_delay_us',
-                    'way_misses', 'way_indirect_hits'
+                    'delta_tx_bytes', 'delta_rx_bytes', 'delta_tx_packets', 'delta_rx_packets'
                 ];
 
                 // Cast each property to an integer
@@ -224,14 +235,11 @@ class WanReportsController extends AppController {
                     $result->{$property} = (int)$result->{$property};
                 }
                 
-                $result->processed = $result->packets - $result->drops;
-
-                $totalBytes += $result->bytes;
-                $totalPackets += $result->packets;
-                $totalDrops += $result->drops;
-                $totalOverlimits += $result->overlimits;
-
-                $items[] = $result;
+                $dataIn         += $result->delta_rx_bytes;
+                $dataOut        += $result->delta_tx_bytes;
+                $dataTotal      += ($result->delta_tx_bytes+$result->delta_rx_bytes);
+                $totalPackets   += ($result->delta_tx_packets+$result->delta_tx_packets);
+                $items[]        = $result;
             }
 
             $slotStart = $slotStart->addMinutes($interval);
@@ -241,31 +249,28 @@ class WanReportsController extends AppController {
         return [
             'items' => $items,
             'totals' => [
-                'bytes'     => $totalBytes,
+                'data_total'=> $dataTotal,
+                'data_in'   => $dataIn,
+                'data_out'  => $dataOut,
                 'packets'   => $totalPackets,
-                'drops'     => $totalDrops,
-                'processed' => $totalPackets - $totalDrops,
-                'overlimits'=> $totalOverlimits
+                'span'      => $duration
             ]
         ];
     }
     
-    private function _getHourlyData($apId, $apProfileExitId){
+    private function _get15MinData($apId, $mwanInterfaceId){
 
-        return $this->_getData($apId, $apProfileExitId, 10, 1);
+        return $this->_getTrafficData($apId, $mwanInterfaceId, 1, 15);
     }
 
-    private function _getDailyData($apId, $apProfileExitId){
+    private function _get30MinData($apId, $mwanInterfaceId){
 
-        return $this->_getData($apId, $apProfileExitId, 60, 24);
+        return $this->_getTrafficData($apId, $mwanInterfaceId, 2, 30);
     }
     
-    private function _getWeeklyData($apId, $apProfileExitId){
-        // One week duration in hours (7 days * 24 hours)
-        $duration = 7 * 24;
-        // Interval for weekly data in minutes (24 hours)
-        $interval = 24*60;
-        return $this->_getData($apId, $apProfileExitId, $interval, $duration);
+    private function _get60MinData($apId, $mwanInterfaceId){
+    
+        return $this->_getTrafficData($apId, $mwanInterfaceId, 3, 60);
     }  
         
     private function _setTimezone(){ 

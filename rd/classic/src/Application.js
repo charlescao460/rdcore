@@ -349,6 +349,28 @@ Ext.define('Rd.Application', {
                 return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
             }
         }
+        
+        Ext.ux.formatDuration = function(seconds) {
+            var days = Math.floor(seconds / 86400);
+            var hours = Math.floor((seconds % 86400) / 3600);
+            var minutes = Math.floor((seconds % 3600) / 60);
+            var seconds = seconds % 60;
+
+            var result = [];
+            if (days > 0) {
+                result.push(days + ' day' + (days > 1 ? 's' : ''));
+            }
+            if (hours > 0) {
+                result.push(hours + ' hour' + (hours > 1 ? 's' : ''));
+            }
+            if (minutes > 0) {
+                result.push(minutes + ' minute' + (minutes > 1 ? 's' : ''));
+            }
+            /*if (seconds > 0) {
+                result.push(seconds + ' second' + (seconds > 1 ? 's' : ''));
+            }*/
+            return result.join(', ');
+        }
 
         //-- Format to a readable amount -->
         Ext.ux.centsToHuman = function(cents) {
