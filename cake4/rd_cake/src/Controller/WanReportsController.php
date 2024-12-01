@@ -9,11 +9,15 @@
 namespace App\Controller;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\Database\Expression\IdentifierExpression;
+
 
 use Cake\Utility\Inflector;
 use Cake\I18n\FrozenTime;
 use Cake\I18n\Time;
 use Cake\Chronos\ChronosInterval;
+
+use App\Model\Entity\QmiInfoEntity;
 
 class WanReportsController extends AppController {
 
@@ -39,6 +43,8 @@ class WanReportsController extends AppController {
         $this->loadModel('Aps');
         $this->loadComponent('Aa');
         $this->loadComponent('JsonErrors');
+        $this->loadComponent('LteHelper');
+        $this->loadComponent('WifiHelper');
     }
  
                    
@@ -49,7 +55,8 @@ class WanReportsController extends AppController {
             return;
         }
         
-        $data   = [];        
+        $data   = [];
+        $metaData = [];        
         $ap_id  = $this->request->getQuery('ap_id');
         $this->_setTimeZone();
         
@@ -73,7 +80,7 @@ class WanReportsController extends AppController {
             if($ap_profile->wan_mwan3_status){
                 $mwanStatus     = $ap_profile->wan_mwan3_status;
                 $mwanStatusData = json_decode($mwanStatus->mwan3_status);
-               // print_r($mwanStatusData);
+                //print_r($mwanStatusData->policies->ipv4);
             }
             
                            
@@ -83,23 +90,48 @@ class WanReportsController extends AppController {
                     if (isset($mwanStatusData->interfaces)){
                         if(isset($mwanStatusData->interfaces->{'mw'.$mwanInterface->id})){
                         
+                            $lteData = [];
+                            $wifiData = [];
+                        
                             //We assume there should be some traffic stats for this interface
                             if($this->span == 'small'){
                                 $stats = $this->_get15MinData($ap_id, $mwanInterface->id);
+                                if($mwanInterface->type == 'lte'){
+                                    $lteData = $this->_get15MinLte($ap_id, $mwanInterface->id);
+                                }
+                                if($mwanInterface->type == 'wifi'){
+                                    $wifiData = $this->_get15MinWifi($ap_id, $mwanInterface->id);
+                                }
                             }
                             
                             if($this->span == 'medium'){
                                 $stats = $this->_get30MinData($ap_id, $mwanInterface->id);
+                                if($mwanInterface->type == 'lte'){
+                                    $lteData = $this->_get30MinLte($ap_id, $mwanInterface->id);
+                                }
+                                if($mwanInterface->type == 'wifi'){
+                                    $wifiData = $this->_get30MinWifi($ap_id, $mwanInterface->id);
+                                }
                             }
                             
                             if($this->span == 'large'){
                                 $stats = $this->_get60MinData($ap_id, $mwanInterface->id);
+                                if($mwanInterface->type == 'lte'){
+                                    $lteData = $this->_get60MinLte($ap_id, $mwanInterface->id);
+                                }
+                                if($mwanInterface->type == 'wifi'){
+                                    $wifiData = $this->_get60MinWifi($ap_id, $mwanInterface->id);
+                                }
                             }
                                                                                                                                   
                             $mwanI= (object) array_merge($mwanInterface->toArray(), (array) $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             //$mwanInterface = (object) ($mwanInterface + $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             $mwanI->graph_traffic_items = $stats['items'];
-                            $mwanI->traffic_totals      = $stats['totals'];
+                            $mwanI->traffic_totals      = $stats['totals'];                            
+                            $mwanI->graph_lte_items     = $lteData;
+                            $mwanI->graph_wifi_items    = $wifiData;
+                            $mwanI->lte_first_signal    = reset($lteData); //set the first one in the row
+                            $mwanI->wifi_first_signal   = reset($wifiData); //set the first one in the row
                         }
                     }                                                    
                     $data[] = $mwanI;            
@@ -111,6 +143,7 @@ class WanReportsController extends AppController {
         //___ FINAL PART ___
         $this->set([
             'items'         => $data,
+            'metaData'      => $metaData,
             'success'       => true
         ]);
         $this->viewBuilder()->setOption('serialize', true);
@@ -188,7 +221,7 @@ class WanReportsController extends AppController {
         return $data;
      
     }
-    
+        
     private function _getTrafficData($apId, $mwanInterfaceId, $interval, $duration){
         $items          = [];
         $start          = 1;
@@ -258,20 +291,182 @@ class WanReportsController extends AppController {
         ];
     }
     
-    private function _get15MinData($apId, $mwanInterfaceId){
+    private function _getLteData($apId, $mwanInterfaceId, $interval, $duration){
+        $items          = [];
+        $start          = 1;
+        $currentTime    = FrozenTime::now();
+        $slotStart      = $currentTime->subMinutes($duration);
 
+        while ($slotStart < $currentTime) {
+            $slotEnd = $slotStart->copy()->addMinutes($interval)->subSecond(1);
+            $formattedSlotStart = $slotStart->i18nFormat("E\nHH:mm", $this->time_zone);
+
+            $whereConditions = [
+                'WanLteStats.ap_id' => $apId,
+                'WanLteStats.mwan_interface_id' => $mwanInterfaceId,
+                'modified >=' => $slotStart,
+                'modified <=' => $slotEnd
+            ];
+
+            $query = $this->{'WanLteStats'}->find();
+            $result = $query->select([
+                'mcc',
+                'mnc',
+                'type',
+                'rsrp'  => $query->func()->avg('rsrp'),
+                'rsrq'  => $query->func()->avg('rsrq'),
+                'rssi'  => $query->func()->avg('rssi'),
+                'snr'   => $query->func()->avg('snr'),              
+            ])->where($whereConditions)->first();
+
+            if ($result) {
+                $result->id = $start;
+                $result->slot_start_txt = $formattedSlotStart;
+                $result->time_unit      = $formattedSlotStart;
+
+                // Define the list of properties to cast to integers
+                $propertiesToCast = [
+                    'rsrp', 'rsrq', 'rssi', 'snr'
+                ];
+
+                // Cast each property to an integer
+                foreach ($propertiesToCast as $property) {
+                    $result->{$property} = (int)$result->{$property};
+                }
+                
+                
+                // Create a new entity instance
+                $guiEntity = new QmiInfoEntity([
+                    'qmi_type'  => $result->type,
+                    'qmi_rssi'  => $result->rssi,
+                    'qmi_rsrp'  => $result->rsrp,
+                    'qmi_rsrq'  => $result->rsrq,
+                    'qmi_snr'   => $result->snr,
+                    'qmi_mcc'   => $result->mcc,
+                    'qmi_mnc'   => $result->mnc
+                ]);
+                
+                
+                $this->LteHelper->getMobileProvider($guiEntity);
+                $this->LteHelper->getRssiGui($guiEntity);
+                $this->LteHelper->getRsrpGui($guiEntity);
+                $this->LteHelper->getRsrqGui($guiEntity);
+                $this->LteHelper->getSnrGui($guiEntity);                           
+                $result->gui    = $guiEntity;
+                
+                $items[]        = $result;
+            }
+
+            $slotStart = $slotStart->addMinutes($interval);
+            $start++;
+        }
+        
+        return $items;  
+    }
+    
+    private function _getWifiData($apId, $mwanInterfaceId, $interval, $duration){
+        $items          = [];
+        $start          = 1;
+        $currentTime    = FrozenTime::now();
+        $slotStart      = $currentTime->subMinutes($duration);
+
+        while ($slotStart < $currentTime) {
+            $slotEnd = $slotStart->copy()->addMinutes($interval)->subSecond(1);
+            $formattedSlotStart = $slotStart->i18nFormat("E\nHH:mm", $this->time_zone);
+
+            $whereConditions = [
+                'WanWifiStats.ap_id' => $apId,
+                'WanWifiStats.mwan_interface_id' => $mwanInterfaceId,
+                'modified >=' => $slotStart,
+                'modified <=' => $slotEnd
+            ];
+
+            $query = $this->{'WanWifiStats'}->find();
+            $result = $query->select([
+                'ssid',
+                'channel',
+                'rx_packets'    => $query->func()->max('rx_packets'),
+                'tx_packets'    => $query->func()->max('tx_packets'),
+                '`signal`'      => $query->func()->avg('`signal`'), // IdentifierExpression
+                'bitrate'       => $query->func()->avg('bitrate'),
+                'txpower'       => $query->func()->avg('txpower'),
+                'tx_rate'       => $query->func()->avg('tx_rate'),
+                'quality'       => $query->func()->avg('quality'),
+                'rx_rate'       => $query->func()->avg('rx_rate'),
+                'noise'         => $query->func()->avg('noise')          
+            ])->where($whereConditions)->first();
+            
+
+            if ($result) {
+                $result->id = $start;
+                $result->slot_start_txt = $formattedSlotStart;
+                $result->time_unit      = $formattedSlotStart;
+
+                // Define the list of properties to cast to integers
+                $propertiesToCast = [
+                    'rx_packets', 'tx_packets', 'signal', 'bitrate', 'txpower', 'tx_rate', 'quality', 'rx_rate', 'noise'
+                ];
+
+                // Cast each property to an integer
+                foreach ($propertiesToCast as $property) {
+                    $result->{$property} = (int)$result->{$property};
+                }
+                
+                $this->WifiHelper->getNoiseGui($result);
+                $this->WifiHelper->getSignalGui($result);
+                $this->WifiHelper->getQualityGui($result);
+                
+                if($result->tx_rate > 0){
+                    $result->tx_rate = round($result->tx_rate/1000 ,1);
+                }
+                
+                if($result->rx_rate > 0){
+                    $result->rx_rate = round($result->rx_rate/1000 ,1);
+                }
+                                              
+                $items[]        = $result;
+            }
+
+            $slotStart = $slotStart->addMinutes($interval);
+            $start++;
+        }
+        
+        return $items;  
+    }
+    
+    
+    //--Data--
+    private function _get15MinData($apId, $mwanInterfaceId){
         return $this->_getTrafficData($apId, $mwanInterfaceId, 1, 15);
     }
-
     private function _get30MinData($apId, $mwanInterfaceId){
-
         return $this->_getTrafficData($apId, $mwanInterfaceId, 2, 30);
+    }    
+    private function _get60MinData($apId, $mwanInterfaceId){    
+        return $this->_getTrafficData($apId, $mwanInterfaceId, 3, 60);
     }
     
-    private function _get60MinData($apId, $mwanInterfaceId){
+    //--LTE--
+    private function _get15MinLte($apId, $mwanInterfaceId){
+        return $this->_getLteData($apId, $mwanInterfaceId, 1, 15);
+    }
+    private function _get30MinLte($apId, $mwanInterfaceId){
+        return $this->_getLteData($apId, $mwanInterfaceId, 2, 30);
+    }    
+    private function _get60MinLte($apId, $mwanInterfaceId){    
+        return $this->_getLteData($apId, $mwanInterfaceId, 3, 60);
+    }
     
-        return $this->_getTrafficData($apId, $mwanInterfaceId, 3, 60);
-    }  
+    //--WIFI-- 
+    private function _get15MinWifi($apId, $mwanInterfaceId){
+        return $this->_getWifiData($apId, $mwanInterfaceId, 1, 15);
+    }
+    private function _get30MinWifi($apId, $mwanInterfaceId){
+        return $this->_getWifiData($apId, $mwanInterfaceId, 2, 30);
+    }    
+    private function _get60MinWifi($apId, $mwanInterfaceId){    
+        return $this->_getWifiData($apId, $mwanInterfaceId, 3, 60);
+    }
         
     private function _setTimezone(){ 
         //New way of doing things by including the timezone_id

@@ -789,7 +789,8 @@ $config['MESHdesk']['xwf_extra_walled_garden'] = 'xwf.fyi'; //Create a list of c
 $config['MESHdesk']['mobile_providers'] = [
 	['mcc' => 655,	"mnc" => 7, 	'name' => 'Cell C', 	'country' => 'ZA', 'logo' => 'za_cell_c.png' ],
 	['mcc' => 655,	"mnc" => 10, 	'name' => 'MTN', 		'country' => 'ZA', 'logo' => 'za_mtn.png' ],
-	['mcc' => 655,	"mnc" => 1, 	'name' => 'Vodacom', 	'country' => 'ZA', 'logo' => 'za_vodacom.png' ]
+	['mcc' => 655,	"mnc" => 1, 	'name' => 'Vodacom', 	'country' => 'ZA', 'logo' => 'za_vodacom.png' ],
+	['mcc' => 655,	"mnc" => 2, 	'name' => 'Telkom', 	'country' => 'ZA', 'logo' => 'za_telkom.png' ]
 ];
 
 return $config;

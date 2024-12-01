@@ -10,15 +10,7 @@ Ext.define('Rd.view.aps.pnlApViewWanGraph', {
     
         var me      = this; 
         var m       = 5;
-        var p       = 5; 
-           
-        var sPie = Ext.create('Ext.data.Store', {
-            fields: [
-                { name: 'category', type: 'string' },
-                { name: 'count',    type: 'int' }
-            ]
-        });
-        
+        var p       = 5;        
         var sLine = Ext.create('Ext.data.Store', {
             fields: [
                 { name: 'delta_tx_bytes',   type: 'int' },
@@ -104,8 +96,8 @@ Ext.define('Rd.view.aps.pnlApViewWanGraph', {
                     {
                         xtype   : 'panel',
                         itemId  : 'pnlTraffic',
-                        margin  : 5,
-                        padding : 5,
+                        margin  : m,
+                        padding : p,
                         flex    : 1,
                         ui      : 'light',
                         tpl     : new Ext.XTemplate(                       
@@ -142,8 +134,8 @@ Ext.define('Rd.view.aps.pnlApViewWanGraph', {
                             fields  : ['time_unit'],
                             label   : Rd.config.rdGraphLabel
                         }],
-                        series: [
-                             {
+                        series: [                        
+                            {
                                 type    : 'line', //should be 'line' but we have some issues when building optimised code
                                 xField  : 'time_unit',
                                 yField  : 'delta_tx_packets',

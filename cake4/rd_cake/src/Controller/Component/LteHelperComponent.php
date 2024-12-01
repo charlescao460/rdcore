@@ -69,12 +69,12 @@ class LteHelperComponent extends Component {
         Configure::load('MESHdesk'); 
         $m_providers   = Configure::read('MESHdesk.mobile_providers'); //Read the defaults
         $mcc = $i->{'qmi_mcc'};
-        $mnc = $i->{'qmi_mnc'};                  
+        $mnc = $i->{'qmi_mnc'};                 
         foreach($m_providers as $p){
         	if(($p['mnc'] == $mnc)&&($p['mcc'] == $mcc)){
         		$i->{'qmi_provider_name'} 		= $p['name'];
         		$i->{'qmi_provider_country'} 	= $p['country'];
-        		$i->{'qmi_provider_logo'} 		= '/cake4/rd_cake/img/mobile_providers/'.$p['logo'];
+        		$i->{'qmi_provider_logo'} 		= '/cake4/rd_cake/img/mobile_providers/48/'.$p['logo'];
         		break;	
         	}                  
         }                      

@@ -136,8 +136,7 @@ Ext.define('Rd.view.aps.pnlApViewSqmGraph', {
                     {
                         flex    : 2,  
                         xtype   : 'cartesian',
-                       // reference: 'chart',
-                        store: sLine,
+                        store   : sLine,
                         axes: [{
                             type: 'numeric',
                             position: 'left',
@@ -160,7 +159,7 @@ Ext.define('Rd.view.aps.pnlApViewSqmGraph', {
                         }],
                         series: [
                          {
-                            type: 'bar', //should be 'line' but we have some issues when building optimised code
+                            type: 'line', //should be 'line' but we have some issues when building optimised code
                             xField: 'time_unit',
                             yField: 'peak_delay_us',
                             title: 'Peak Delay (us)',
@@ -179,7 +178,7 @@ Ext.define('Rd.view.aps.pnlApViewSqmGraph', {
                                 }
                             }
                         }, {
-                            type: 'bar',  //should be 'line' but we have some issues when building optimised code
+                            type: 'line',  //should be 'line' but we have some issues when building optimised code
                             xField: 'time_unit',
                             yField: 'avg_delay_us',
                             title: 'Average Delay (us)',
@@ -198,7 +197,7 @@ Ext.define('Rd.view.aps.pnlApViewSqmGraph', {
                                 }
                             }
                         }, {
-                            type: 'bar',  //should be 'line' but we have some issues when building optimised code
+                            type: 'line',  //should be 'line' but we have some issues when building optimised code
                             xField: 'time_unit',
                             yField: 'base_delay_us',
                             title: 'Base Delay (us)',

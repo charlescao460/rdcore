@@ -9,7 +9,9 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
     store   : undefined,
   	requires    : [
         'Rd.view.aps.vcApViewWan',
-        'Rd.view.aps.pnlApViewWanGraph'
+        'Rd.view.aps.pnlApViewWanGraph',
+        'Rd.view.aps.pnlApViewWanLte',
+        'Rd.view.aps.pnlApViewWanWifi'
     ],
     controller  : 'vcApViewWan',
     initComponent: function(){
@@ -52,6 +54,35 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                     enableToggle : true, 
                     scale       : scale, 
                     itemId      : 'large'
+                },
+                { xtype: 'tbseparator' },
+                {   
+                    xtype       : 'button', 
+                    glyph       : Rd.config.icnData, 
+                    scale       : scale,
+                    toggleGroup : 'wan_view', 
+                    enableToggle : true, 
+                    itemId      : 'btnData',   
+                    tooltip     : 'Data Usage',
+                    pressed     : true
+                },
+                {   
+                    xtype       : 'button', 
+                    glyph       : Rd.config.icnWifi, 
+                    scale       : scale, 
+                    toggleGroup : 'wan_view', 
+                    enableToggle : true,
+                    itemId      : 'btnLte',   
+                    tooltip     : 'LTE Signal'
+                },
+                {   
+                    xtype       : 'button', 
+                    glyph       : Rd.config.icnSsid, 
+                    scale       : scale, 
+                    toggleGroup : 'wan_view', 
+                    enableToggle : true,
+                    itemId      : 'btnWifi',   
+                    tooltip     : 'WiFi Signal'
                 }
             ]
         }]
@@ -113,7 +144,7 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                 				' Online for {[Ext.ux.formatDuration(values.online)]}',
                 			'</div>',
                 	    '</tpl>',
-                	    '<tpl if="status==\'offline\'">',
+                	    '<tpl if="status==\'offline\' || status==\'disabled\'">',
 		        	        '<div style="font-size:16px;color:orange;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
                 				'<span style="font-family:FontAwesome;">&#xf10c;</span>',
                 				' Offline for {[Ext.ux.formatDuration(values.offline)]}',
@@ -128,7 +159,29 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
 	        	        '<div style="font-size:16px;color:grey;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
             				'<span style="font-family:FontAwesome;">&#xf0c1;</span>',
             				'<i> Interface up for {[Ext.ux.formatDuration(values.uptime)]}</i>',
-            			'</div>',                                                                                       
+            			'</div>',
+            			
+            			'<tpl if="policy_mode==\'load_balance\'">',
+	                        '<div style="padding-top:5px;"></div>',
+	            			'<div style="font-size:16px;color:#282852;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+	            				'<span style="font-family:FontAwesome;">&#xf24e</span>',
+	            				'  LOAD BALANCE',
+	            			'</div>',
+		            	'</tpl>',				    	    
+		    	        '<tpl if="policy_mode==\'fail_over\'">',
+		    	            '<div style="padding-top:5px;"></div>',
+	            			'<div style="font-size:16px;color:#282852;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+	            				'<span style="font-family:FontAwesome;">&#xf205</span>',
+	            				'  FAIL-OVER ',
+	            				'<tpl if="policy_role==\'active\'">',
+	            				    '(<span style="font-family:FontAwesome;">&#xf01d</span> Active)',
+	            			    '<tpl else>',
+	            			        '(<span style="font-family:FontAwesome;">&#xf28c</span> Standby)',
+	            		        '</tpl>', 
+	            			'</div>',				    	        
+		    	        '</tpl>',
+            			
+            			                                                                                       
                     '</div>',			    	    			    	    			                				                		        					        	         	
                 '</div>',
             '</tpl>'
@@ -151,23 +204,39 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                     type    : 'hbox',         
                     align   : 'stretch'
                 },
-                items   : [{
-                    xtype       : 'panel',
-                    frame       : false,
-                    height      : '100%', 
-                    width       :  450,
-                    itemId      : 'pnlForApViewWanView',
-                    layout: {
-                       type     : 'vbox',
-                       align    : 'stretch'
+                items   : [
+                    {
+                        xtype       : 'panel',
+                        margin      : 5,
+                        frame       : false,
+                        height      : '100%', 
+                        width       :  450,
+                        itemId      : 'pnlForApViewWanView',
+                        layout: {
+                           type     : 'vbox',
+                           align    : 'stretch'
+                        },
+                        items       : v,
+                        autoScroll  : true
                     },
-                    items       : v,
-                    autoScroll  : true
-                },
-                {
-                    xtype       : 'pnlApViewWanGraph',
-                    flex        : 1
-                }]
+                    {
+                        xtype       : 'pnlApViewWanGraph',
+                        itemId      : 'pnlApViewWanGraph',
+                        flex        : 1
+                    },
+                    {
+                        xtype       : 'pnlApViewWanLte',
+                        itemId      : 'pnlApViewWanLte',
+                        flex        : 1,
+                        hidden      : true
+                    },
+                    {
+                        xtype       : 'pnlApViewWanWifi',
+                        itemId      : 'pnlApViewWanWifi',
+                        flex        : 1,
+                        hidden      : true
+                    }
+                ]
             }
         ]   
                                    
