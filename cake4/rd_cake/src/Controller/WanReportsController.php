@@ -55,8 +55,8 @@ class WanReportsController extends AppController {
             return;
         }
         
-        $data   = [];
-        $metaData = [];        
+        $data           = [];
+        $mwanStatusData = [];        
         $ap_id  = $this->request->getQuery('ap_id');
         $this->_setTimeZone();
         
@@ -83,12 +83,30 @@ class WanReportsController extends AppController {
                 //print_r($mwanStatusData->policies->ipv4);
             }
             
+            //Try and determine the current interfaces that is in use
+            $ifInUse = [];            
+            if($mwanStatusData){
+                foreach ($mwanStatusData->policies as $policy) {
+                    foreach ($policy as $key => $value) {
+                        if (is_array($value)) { // Check if the value is an array
+                            foreach ($value as $failOver) {
+                                if (isset($failOver->interface, $failOver->percent)) {
+                                    $ifInUse[$failOver->interface] = $failOver->percent;
+                                }
+                            }
+                        }
+                    }
+                }       
+            }
+                       
                            
             if($ap_profile->multi_wan_profile){            
                 foreach($ap_profile->multi_wan_profile->mwan_interfaces as $mwanInterface){ 
                  
                     if (isset($mwanStatusData->interfaces)){
                         if(isset($mwanStatusData->interfaces->{'mw'.$mwanInterface->id})){
+                        
+                            $mwanStatusData->interfaces->{'mw'.$mwanInterface->id}->name = $mwanInterface->name;
                         
                             $lteData = [];
                             $wifiData = [];
@@ -123,6 +141,12 @@ class WanReportsController extends AppController {
                                     $wifiData = $this->_get60MinWifi($ap_id, $mwanInterface->id);
                                 }
                             }
+                            
+                            //See if it is currenlty active
+                            if(isset($ifInUse['mw'.$mwanInterface->id])){
+                                $mwanInterface->traffic_percent = $ifInUse['mw'.$mwanInterface->id];
+                            }
+                            
                                                                                                                                   
                             $mwanI= (object) array_merge($mwanInterface->toArray(), (array) $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             //$mwanInterface = (object) ($mwanInterface + $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
@@ -143,7 +167,7 @@ class WanReportsController extends AppController {
         //___ FINAL PART ___
         $this->set([
             'items'         => $data,
-            'metaData'      => $metaData,
+            'metaData'      => $mwanStatusData,
             'success'       => true
         ]);
         $this->viewBuilder()->setOption('serialize', true);

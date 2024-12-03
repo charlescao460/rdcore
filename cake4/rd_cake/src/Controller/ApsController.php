@@ -147,7 +147,8 @@ class ApsController extends AppController {
             'OpenvpnServerClients',
             'ApUptmHistories',
             'ApConnectionSettings',
-            'ApStaticEntryOverrides'
+            'ApStaticEntryOverrides',
+            'WanMwan3Status' //Dec 2024 Multi-WAN
         ],'Aps');
 
         //===== PAGING (MUST BE LAST) ======
@@ -414,6 +415,12 @@ class ApsController extends AppController {
                 $mao->{'city'}                = $city;
                 $mao->{'postal_code'}         = $postal_code;
                 
+                
+                //WanMansStatus
+                if($mao->wan_mwan3_status){
+                    $this->_getMwanInfo($mao);              
+                }
+                
                 //wbw detail
                 if($i->ap_connection_settings){   
                     $mao->{'wbw_active'} = false;
@@ -490,6 +497,7 @@ class ApsController extends AppController {
                 unset($mao->ap_actions);
                 unset($mao->openvpn_server_clients);
                 unset($mao->ap_connection_settings); //Remove the list (not needed)
+                unset($mao->wan_mwan3_status);
 
                 array_push($items,$mao);
             }
@@ -758,6 +766,15 @@ class ApsController extends AppController {
             'users'     => $query->distinct_mac_count,
             'data'      => $this->Formatter->formatted_bytes($query->total_tx_bytes + $query->total_rx_bytes)  
         ];   
+    }
+    
+    private function _getMwanInfo($i){  
+        if($i->wan_mwan3_status){        
+            $mwan_data = json_decode($i->wan_mwan3_status->mwan3_status);
+          //  print_r($mwan_data);
+            $i->mwan_active = true;
+            $i->gateway = 'yes';           
+        }    
     }
 
 }

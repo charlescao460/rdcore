@@ -11,7 +11,8 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
         'Rd.view.aps.vcApViewWan',
         'Rd.view.aps.pnlApViewWanGraph',
         'Rd.view.aps.pnlApViewWanLte',
-        'Rd.view.aps.pnlApViewWanWifi'
+        'Rd.view.aps.pnlApViewWanWifi',
+        'Rd.view.aps.pnlApViewWanDetail'
     ],
     controller  : 'vcApViewWan',
     initComponent: function(){
@@ -22,14 +23,22 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
         me.tbar  = [{   
             xtype   : 'buttongroup',
             items   : [
-               {   
-                    xtype   : 'button', 
-                    glyph   : Rd.config.icnReload , 
+                { 
+                    xtype   : 'splitbutton',
+                    glyph   : Rd.config.icnReload ,
                     scale   : scale, 
-                    itemId  : 'reload',   
-                    tooltip : i18n('sReload')
-                },
-               // '|',
+                    itemId  : 'reload',
+                    tooltip : i18n('sReload'),
+                    menu    : {
+                        items: [
+                            '<b class="menu-title">Reload every:</b>',
+                            {'text': '30 seconds',  'itemId': 'mnuRefresh30s','group': 'refresh','checked': false },
+                            {'text': '1 minute',    'itemId': 'mnuRefresh1m', 'group': 'refresh','checked': false },
+                            {'text': '5 minutes',   'itemId': 'mnuRefresh5m', 'group': 'refresh','checked': false },
+                            {'text':'Stop auto reload','itemId':'mnuRefreshCancel', 'group': 'refresh', 'checked':true}
+                        ]
+                    }
+                },             
                 {   
                     xtype       : 'button', 
                     text        : '15 Minutes',    
@@ -83,6 +92,15 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                     enableToggle : true,
                     itemId      : 'btnWifi',   
                     tooltip     : 'WiFi Signal'
+                },
+                {   
+                    xtype       : 'button', 
+                    glyph       : Rd.config.icnGears, 
+                    scale       : scale, 
+                    toggleGroup : 'wan_view', 
+                    enableToggle : true,
+                    itemId      : 'btnDetail',   
+                    tooltip     : 'More Detail'
                 }
             ]
         }]
@@ -139,10 +157,17 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                         
                         '<div style="padding-top:10px;"></div>',
                         '<tpl if="status==\'online\'">',
-		        	        '<div style="font-size:16px;color:green;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
-                				'<span style="font-family:FontAwesome;">&#xf111;</span>',
-                				' Online for {[Ext.ux.formatDuration(values.online)]}',
-                			'</div>',
+                            "<tpl if=\"policy_role=='standby' && Ext.isEmpty(values.traffic_percent)\">", //HEADS-UP you have to use values.<whatever> in the function
+                                '<div style="font-size:16px;color:blue;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                    				'<span style="font-family:FontAwesome;">&#xf111;</span>',
+                    				' Standby for {[Ext.ux.formatDuration(values.online)]}',
+                    			'</div>',
+                            '<tpl else>',
+		            	        '<div style="font-size:16px;color:green;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                    				'<span style="font-family:FontAwesome;">&#xf111;</span>',
+                    				' Online for {[Ext.ux.formatDuration(values.online)]}',
+                    			'</div>',
+                			'</tpl>',
                 	    '</tpl>',
                 	    '<tpl if="status==\'offline\' || status==\'disabled\'">',
 		        	        '<div style="font-size:16px;color:orange;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
@@ -155,11 +180,20 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                 				'<span style="font-family:FontAwesome;">&#xf1db;</span>',
                 				' NO TRACKING',
                 			'</div>',
-                	    '</tpl>',               	 
-	        	        '<div style="font-size:16px;color:grey;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
-            				'<span style="font-family:FontAwesome;">&#xf0c1;</span>',
-            				'<i> Interface up for {[Ext.ux.formatDuration(values.uptime)]}</i>',
-            			'</div>',
+                	    '</tpl>',
+                	    '<tpl if="up">',                	                     	 
+	            	        '<div style="font-size:16px;color:grey;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">',
+                				'<span style="font-family:FontAwesome;">&#xf0c1;</span>',
+                				'<i> Interface up for {[Ext.ux.formatDuration(values.uptime)]}</i>',
+                			'</div>',
+            			'</tpl>',
+            			
+            			'<tpl if="traffic_percent !== undefined">',
+            			    '<div style="font-size:16px;color:green;text-align:left;padding-left:20px;padding-top:3px;padding-bottom:3px;">', 
+                                '<i class="fa fa-sliders"></i>',
+                                ' Traffic allocation is {traffic_percent}%',
+                            '</div>',
+                        '</tpl>',
             			
             			'<tpl if="policy_mode==\'load_balance\'">',
 	                        '<div style="padding-top:5px;"></div>',
@@ -220,21 +254,28 @@ Ext.define('Rd.view.aps.pnlApViewWan', {
                         autoScroll  : true
                     },
                     {
-                        xtype       : 'pnlApViewWanGraph',
-                        itemId      : 'pnlApViewWanGraph',
-                        flex        : 1
-                    },
-                    {
-                        xtype       : 'pnlApViewWanLte',
-                        itemId      : 'pnlApViewWanLte',
-                        flex        : 1,
-                        hidden      : true
-                    },
-                    {
-                        xtype       : 'pnlApViewWanWifi',
-                        itemId      : 'pnlApViewWanWifi',
-                        flex        : 1,
-                        hidden      : true
+                        xtype   : 'panel',
+                        layout  : 'card',
+                        itemId  : 'pnlCardWan',
+                        flex    : 1,
+                        items   : [
+                            {
+                                xtype       : 'pnlApViewWanGraph',
+                                itemId      : 'pnlApViewWanGraph',
+                            },
+                            {
+                                xtype       : 'pnlApViewWanLte',
+                                itemId      : 'pnlApViewWanLte'
+                            },
+                            {
+                                xtype       : 'pnlApViewWanWifi',
+                                itemId      : 'pnlApViewWanWifi'
+                            },
+                            {
+                                xtype       : 'pnlApViewWanDetail',
+                                itemId      : 'pnlApViewWanDetail'
+                            }
+                        ]
                     }
                 ]
             }

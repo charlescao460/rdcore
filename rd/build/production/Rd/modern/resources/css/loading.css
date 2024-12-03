@@ -222,5 +222,27 @@
     color: #03861e; 
 }
 
+.lblContainer {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    margin: 1px 0; /* Add spacing between rows */
+}
+
+.lblItem {
+    width: 120px; /* Fixed width for alignment */
+    text-align: left;
+    color: #868686;
+    font-size: 14px;
+    margin-right: 10px; /* Spacing between label and value */
+}
+
+.lblValue {
+    flex-grow: 1; /* Allow the value label to take remaining space */
+    text-align: left;
+    font-size: 14px;
+    color: #005691;
+}
+
+
 
 

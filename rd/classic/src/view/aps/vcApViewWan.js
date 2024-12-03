@@ -18,6 +18,9 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         'pnlApViewWan' : {
             activate : 'onActivate'
         },
+        'pnlApViewWan #reload menuitem[group=refresh]'   : {
+            click:     'reloadOptionClick'
+        },  
     	'pnlApViewWan #reload': {
             click   : 'reload'
         },
@@ -42,6 +45,9 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         },
         'pnlApViewWan #btnWifi':{
             click: 'btnWifiClick'
+        },
+        'pnlApViewWan #btnDetail':{
+            click: 'btnDetailClick'
         }       
     },
     itemSelected: function(dv,record){
@@ -57,19 +63,29 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         var me = this;
         var dd      = Ext.getApplication().getDashboardData();
         var tz_id   = dd.user.timezone_id; 
-        var store   = me.getView().down('#dvApViewWan').getStore();
-        store.getProxy().setExtraParams({ap_id: me.getView().apId, span : me.getSpan(), timezone_id:tz_id });
+        
+        
+        var store = me.getView().down('#dvApViewWan').getStore();
+        store.getProxy().setExtraParams({
+            ap_id       : me.getView().apId,
+            span        : me.getSpan(),
+            timezone_id : tz_id
+        });
         store.reload({
             callback: function(records, operation, success) {
-                if (success) {
-                    // Your callback code here
-                    if(me.getSelectedId()){
+                if (success) {                                   
+                    var md   = store.getProxy().getReader().metaData;
+                    if(md){
+                        me.getView().down('pnlApViewWanDetail').setData(md);
+                    }
+                
+                    // Your existing logic for selecting records
+                    if (me.getSelectedId()) {
                         var record = store.findRecord('id', me.getSelectedId());
                         me.updateGraph(record);
-                       // me.getView().down('#dvApViewWan').getSelectionModel().select(record);
-                    }else{
+                    } else {
                         me.getView().down('#dvApViewWan').getSelectionModel().select(0);
-                    }                   
+                    }
                 } else {
                     console.log('Store reload failed');
                     // Error handling code here
@@ -102,10 +118,8 @@ Ext.define('Rd.view.aps.vcApViewWan', {
             }
             if(me.getView().down('#btnLte').pressed){
                 me.getView().down('#btnData').setPressed();
-            }
-            me.getView().down('#pnlApViewWanGraph').show();
-            me.getView().down('#pnlApViewWanLte').hide();
-            me.getView().down('#pnlApViewWanWifi').hide();
+            }            
+            me.getView().down('#pnlCardWan').getLayout().setActiveItem(0);
             me.getView().down('#btnLte').disable();
             me.getView().down('#btnWifi').disable();           
         }
@@ -113,21 +127,18 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         if(type == 'lte'){
             if(me.getView().down('#btnWifi').pressed){
                 me.getView().down('#btnData').setPressed();
-                me.getView().down('#pnlApViewWanGraph').show();
-                me.getView().down('#pnlApViewWanLte').hide();
+                me.getView().down('#pnlCardWan').getLayout().setActiveItem(0);
             }
             me.getView().down('#btnLte').enable();
-            me.getView().down('#btnWifi').disable();
-            me.getView().down('#pnlApViewWanWifi').hide();                    
+            me.getView().down('#btnWifi').disable();                
         }
         
          if(type == 'wifi'){
             if(me.getView().down('#btnLte').pressed){
                 me.getView().down('#btnData').setPressed();
-                me.getView().down('#pnlApViewWanGraph').show();
+                me.getView().down('#pnlCardWan').getLayout().setActiveItem(0);
             }
             me.getView().down('#btnWifi').enable();
-            me.getView().down('#pnlApViewWanLte').hide();
             me.getView().down('#btnLte').disable();           
         }
               
@@ -164,21 +175,39 @@ Ext.define('Rd.view.aps.vcApViewWan', {
         
     },
     btnDataClick : function(btn){
-        var me = this;
-        me.getView().down('#pnlApViewWanGraph').show();
-        me.getView().down('#pnlApViewWanLte').hide();
-        me.getView().down('#pnlApViewWanWifi').hide();    
+        this.getView().down('#pnlCardWan').setActiveItem(0);
     },
     btnLteClick : function(btn){
-        var me = this;
-        me.getView().down('#pnlApViewWanGraph').hide();
-        me.getView().down('#pnlApViewWanWifi').hide(); 
-        me.getView().down('#pnlApViewWanLte').show();   
+        this.getView().down('#pnlCardWan').setActiveItem(1);
     },
     btnWifiClick : function(btn){
-        var me = this;
-        me.getView().down('#pnlApViewWanGraph').hide();
-        me.getView().down('#pnlApViewWanLte').hide();
-        me.getView().down('#pnlApViewWanWifi').show();      
+        this.getView().down('#pnlCardWan').setActiveItem(2);
+    },
+    btnDetailClick : function(btn){
+        this.getView().down('#pnlCardWan').setActiveItem(3);
+    },
+    reloadOptionClick: function(menu_item){
+        var me      = this;
+        var n       = menu_item.getItemId();
+        var b       = menu_item.up('button'); 
+        var interval= 30000; //default
+        clearInterval(me.autoReload);   //Always clear
+        b.setGlyph(Rd.config.icnTime);
+
+        if(n == 'mnuRefreshCancel'){
+            b.setGlyph(Rd.config.icnReload);
+            return;
+        }
+        
+        if(n == 'mnuRefresh1m'){
+           interval = 60000
+        }
+
+        if(n == 'mnuRefresh5m'){
+           interval = 360000
+        }
+        me.autoReload = setInterval(function(){        
+            me.reload();
+        },  interval);  
     }
 });
