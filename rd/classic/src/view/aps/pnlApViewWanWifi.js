@@ -46,7 +46,7 @@ Ext.define('Rd.view.aps.pnlApViewWanWifi', {
                     type        : 'numeric',
                     position    : 'left',
                     minimum     : -200, // Minimum value for the y-axis
-                    maximum     : -20,  // Maximum value for the y-axis
+                    maximum     : 0,  // Maximum value for the y-axis
                     grid        : true,
                     fields      : ['signal', 'noise'],
                   //  label       : Rd.config.rdGraphLabel
