@@ -303,13 +303,13 @@ Ext.define('Rd.controller.cDashboard', {
     			var added = Ext.getApplication().runAction(c,'Index',pnl,id);
                 if(!added){
                     pnl.setActiveItem(item);
-                    pnl.getEl().slideIn('r'); //Slide it in if **not** added
+                    pnl.getEl().slideIn('t'); //Slide it in if **not** added
                 }else{
                     pnl.setActiveItem(id);
                 }
 		   	}else{
 		   		pnl.setActiveItem(item);
-                pnl.getEl().slideIn('r'); //Slide it in if **not** added
+                pnl.getEl().slideIn('t'); //Slide it in if **not** added
 		   	}     	
     	} 
     },

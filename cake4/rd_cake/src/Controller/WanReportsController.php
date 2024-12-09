@@ -151,7 +151,9 @@ class WanReportsController extends AppController {
                             $mwanI= (object) array_merge($mwanInterface->toArray(), (array) $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             //$mwanInterface = (object) ($mwanInterface + $mwanStatusData->interfaces->{'mw'.$mwanInterface->id});
                             $mwanI->graph_traffic_items = $stats['items'];
-                            $mwanI->traffic_totals      = $stats['totals'];                            
+                            $mwanI->traffic_totals      = $stats['totals']; 
+                            $mwanI->ipv4_address        = $stats['ipv4_address'];
+                            $mwanI->ipv6_address        = $stats['ipv6_address'];                            
                             $mwanI->graph_lte_items     = $lteData;
                             $mwanI->graph_wifi_items    = $wifiData;
                             $mwanI->lte_first_signal    = reset($lteData); //set the first one in the row
@@ -256,7 +258,9 @@ class WanReportsController extends AppController {
         $dataIn         = 0;
         $dataOut        = 0;
         $totalPackets   = 0;
-
+        $ipv4_address   ='';
+        $ipv6_address   ='';
+ 
         while ($slotStart < $currentTime) {
             $slotEnd = $slotStart->copy()->addMinutes($interval)->subSecond(1);
             $formattedSlotStart = $slotStart->i18nFormat("E\nHH:mm", $this->time_zone);
@@ -274,6 +278,8 @@ class WanReportsController extends AppController {
                 'delta_rx_bytes'    => $query->func()->sum('delta_rx_bytes'),
                 'delta_tx_packets'  => $query->func()->sum('delta_tx_packets'),
                 'delta_rx_packets'  => $query->func()->sum('delta_rx_packets'),
+                'ipv4_address',
+                'ipv6_address'
                
             ])->where($whereConditions)->first();
 
@@ -297,6 +303,14 @@ class WanReportsController extends AppController {
                 $dataTotal      += ($result->delta_tx_bytes+$result->delta_rx_bytes);
                 $totalPackets   += ($result->delta_tx_packets+$result->delta_tx_packets);
                 $items[]        = $result;
+                
+                if($result->ipv4_address){
+                    $ipv4_address = $result->ipv4_address;
+                }
+                if($result->ipv6_address){
+                    $ipv6_address = $result->ipv6_address;
+                }
+                
             }
 
             $slotStart = $slotStart->addMinutes($interval);
@@ -311,7 +325,9 @@ class WanReportsController extends AppController {
                 'data_out'  => $dataOut,
                 'packets'   => $totalPackets,
                 'span'      => $duration
-            ]
+            ],
+            'ipv4_address'  => $ipv4_address,
+            'ipv6_address'  => $ipv6_address
         ];
     }
     

@@ -14,6 +14,10 @@ if not exists (select * from information_schema.columns
         ap_id int(11) DEFAULT NULL,
         node_id int(11) DEFAULT NULL,
         mwan_interface_id int(11) DEFAULT NULL,
+        ipv4_mask INT DEFAULT NULL,             -- Allows NULL
+        ipv4_address VARCHAR(45) DEFAULT NULL,  -- Supports IPv6 addresses
+        ipv6_mask INT DEFAULT NULL,             -- Allows NULL
+        ipv6_address VARCHAR(45) DEFAULT NULL,  -- Supports IPv6 addresses
         tx_bytes BIGINT NOT NULL,           -- Raw transmitted bytes from the device
         rx_bytes BIGINT NOT NULL,           -- Raw received bytes from the device
         delta_tx_bytes BIGINT NOT NULL,     -- Delta for transmitted bytes
@@ -102,6 +106,10 @@ CREATE PROCEDURE InsertWanTrafficStats(
     IN in_ap_id INT,
     IN in_node_id INT,
     IN in_mwan_interface_id INT,
+    IN in_ipv4_mask INT,             -- Allows NULL
+    IN in_ipv4_address VARCHAR(45),  -- Supports IPv6 addresses
+    IN in_ipv6_mask INT,             -- Allows NULL
+    IN in_ipv6_address VARCHAR(45),  -- Supports IPv6 addresses
     IN in_tx_bytes BIGINT,
     IN in_rx_bytes BIGINT,
     IN in_tx_packets BIGINT,
@@ -137,6 +145,10 @@ BEGIN
         ap_id,
         node_id,
         mwan_interface_id,
+        ipv4_mask,
+        ipv4_address,
+        ipv6_mask,
+        ipv6_address,
         tx_bytes,
         rx_bytes,
         delta_tx_bytes,
@@ -151,6 +163,10 @@ BEGIN
         in_ap_id,
         in_node_id,
         in_mwan_interface_id,
+        in_ipv4_mask,
+        in_ipv4_address,
+        in_ipv6_mask,
+        in_ipv6_address,
         in_tx_bytes,
         in_rx_bytes,
         GREATEST(in_tx_bytes - prev_tx_bytes, 0),

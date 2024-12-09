@@ -363,10 +363,32 @@ function _addWanStats($wan_stats,$node){
                 $stats
             );
             
-            $stmt = $conn->prepare("CALL InsertWanTrafficStats(:ap_id, :node_id, :mwan_interface_id, :tx_bytes, :rx_bytes, :tx_packets, :rx_packets)");
+            $ipv4_mask = null;
+            $ipv4_address = null;
+            $ipv6_mask = null;
+            $ipv6_address = null;
+            
+            if (!empty($usageEntry['ipv4_address'])) {
+                foreach ($usageEntry['ipv4_address'] as $entry) {
+                    $ipv4_mask      = isset($entry['mask']) ? $entry['mask'] : NULL; // Default to NULL
+                    $ipv4_address   = isset($entry['address']) ? $entry['address'] : NULL; // Default to NUL
+                }
+            } 
+            if (!empty($usageEntry['ipv6_address'])) {
+                foreach ($usageEntry['ipv6_address'] as $entry) {
+                    $ipv6_mask      = isset($entry['mask']) ? $entry['mask'] : NULL; // Default to NULL
+                    $ipv6_address   = isset($entry['address']) ? $entry['address'] : NULL; // Default to NUL
+                }
+            }             
+            
+            $stmt = $conn->prepare("CALL InsertWanTrafficStats(:ap_id, :node_id, :mwan_interface_id, :ipv4_mask, :ipv4_address, :ipv6_mask, :ipv6_address, :tx_bytes, :rx_bytes, :tx_packets, :rx_packets)");
             $stmt->bindParam(':ap_id', $ap_id);
             $stmt->bindParam(':node_id', $node_id);
             $stmt->bindParam(':mwan_interface_id', $interface);
+            $stmt->bindParam(':ipv4_mask', $ipv4_mask);
+            $stmt->bindParam(':ipv4_address',$ipv4_address  );
+            $stmt->bindParam(':ipv6_mask', $ipv6_mask);
+            $stmt->bindParam(':ipv6_address', $ipv6_address);
             $stmt->bindParam(':tx_bytes', $stats['tx_bytes']);
             $stmt->bindParam(':rx_bytes', $stats['rx_bytes']);
             $stmt->bindParam(':tx_packets', $stats['tx_packets']);
