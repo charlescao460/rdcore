@@ -137,7 +137,15 @@ class MeshHelper22Component extends Component {
         	foreach(array_keys($this->private_psks) as $ppsk_id){
         	    $this->private_psks[$ppsk_id] = $this->_formulate_ppsk_file($ppsk_id);
         	} 
-        	$json['config_settings']['ppsk_files'] = $this->private_psks;      	
+        	$json['config_settings']['ppsk_files'] = $this->private_psks;
+        	
+        	if($this->MwanActive){
+        	    $json['config_settings']['mwan'] = $this->Connection->getMwanSettings();
+        	    $json['config_settings']['mwan']['mode'] = 'mesh'; //We add this so the firmware will know it has to restart the mwan3 program since batman takes a while to configure itself
+        	    if(isset($json['config_settings']['gateways'])){
+        	        $json['config_settings']['mwan']['firewall']['forwarding'] = $json['config_settings']['gateways'];
+        	    }
+        	}                     	
             
             return $json; 
         }
@@ -490,6 +498,11 @@ class MeshHelper22Component extends Component {
 		$pppoe_detail           = [];
 		
 		[$network,$eth_br_chk,$eth_br_with] = $this->Connection->getNodeConnectionInfo($this->NodeId,$ent_mesh,$this->Hardware,$gateway);
+		
+		$this->br_int           = $this->Connection->br_int;
+		$this->QmiActive        = $this->Connection->QmiActive;
+		$this->MwanActive       = $this->Connection->MwanActive;
+		$wan_bridge_id          = $this->Connection->wanBridgeId;
 		
 		
 		//---- Batman-Adv ---
@@ -1962,7 +1975,15 @@ class MeshHelper22Component extends Component {
                     ]);
             }      
         }
-         
+        
+        
+        if($this->Connection->MwanActive){
+            $mwSettings = $this->Connection->getMwanSettings();
+            if(isset($mwSettings['wireless'])){
+                $wireless = array_merge($wireless,$mwSettings['wireless']);
+            }    
+        }
+                 
         return $wireless;  
     }
     

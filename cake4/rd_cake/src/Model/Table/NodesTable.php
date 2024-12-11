@@ -71,7 +71,8 @@ class NodesTable extends Table{
         $this->hasMany('NodeScans', ['dependent' => true]);        
         $this->hasMany('NodeConnectionSettings', ['dependent' => true]);      
         $this->hasMany('NodeSqmStats', ['dependent' => true]);
-
+        $this->belongsTo('MultiWanProfiles');	    
+	    $this->hasOne('WanMwan3Status');
     }
     
     public function validationDefault(Validator $validator):Validator{

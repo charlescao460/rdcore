@@ -332,6 +332,9 @@ Ext.define('Rd.view.meshes.gridNodeLists' ,{
             if(r.get('gateway') == 'no'){
                 return '<div class=\"fieldGrey\"><i class=\"fa fa-dice-d20\"></i> MESH</div>';
             }
+            if(r.get('gateway') == 'yes' && r.get('mwan_active')){
+                return '<div class=\"fieldTealWhite\"><i class=\"fa fa-sliders\"></i> MWAN</div>';
+            }
             if(r.get('gateway') == 'yes'){
                 return '<div class=\"fieldBlue\"><i class=\"fa fa-network-wired\"></i> LAN</div>';
             }

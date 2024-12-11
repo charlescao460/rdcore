@@ -81,7 +81,12 @@ class NodeListsController extends AppController{
        		return;     	
        	}
 						
-        $this->CommonQueryFlat->build_cloud_query($query, $cloud_id, ['Meshes','NodeUptmHistories','NodeConnectionSettings']); //AP QUERY is sort of different in a way
+        $this->CommonQueryFlat->build_cloud_query($query, $cloud_id, [
+            'Meshes',
+            'NodeUptmHistories',
+            'NodeConnectionSettings',
+            'WanMwan3Status', //Dec 2024 Multi-WAN
+        ]); //Nodes QUERY is sort of different in a way
                 
 
         //===== PAGING (MUST BE LAST) ======
@@ -211,6 +216,7 @@ class NodeListsController extends AppController{
             }
             
             unset($i->node_connection_settings); //Remove the list (not needed)
+            
                       
             $i->country_code   = $country_code;
 		    $i->country_name   = $country_name;
@@ -259,8 +265,13 @@ class NodeListsController extends AppController{
                 $gateway = 'yes';      
             }
             $i->gateway = $gateway;
-			
-			
+            
+            //WanMansStatus
+            if($i->wan_mwan3_status){
+                $this->_getMwanInfo($i);              
+            }
+            unset($i->wan_mwan3_status);
+						
 			if($i->last_contact_from_ip !== ''){
 			
 			}
@@ -489,6 +500,15 @@ class NodeListsController extends AppController{
             ];  
         }
         return $hardware;
+    }
+    
+    private function _getMwanInfo($i){  
+        if($i->wan_mwan3_status){        
+            $mwan_data = json_decode($i->wan_mwan3_status->mwan3_status);
+          //  print_r($mwan_data);
+            $i->mwan_active = true;
+            $i->gateway = 'yes';           
+        }    
     }
   
 }
