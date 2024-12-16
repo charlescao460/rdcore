@@ -2,7 +2,8 @@
 
 set -xu
 
-docker network create --attachable -d bridge radiusdesk-bridge || exit 1
+mkdir rdcore
+mount --bind ../../rdcore ./rdcore
 
 source ./.env
 
@@ -17,12 +18,12 @@ echo
 echo Starting Build ....
 echo
 echo Copying database files to volume mounts for MariaDB ...
-mkdir  -p /mnt/data/radiusdesk || exit 1
-mkdir  -p /mnt/data/radiusdesk/db_startup || exit 1
-mkdir  -p /mnt/data/radiusdesk/db_conf || exit 1
-chmod -R 777 /mnt/data/radiusdesk || exit 1
-chmod -R 777 /mnt/data/radiusdesk/db_startup || exit 1
-chmod -R 777 /mnt/data/radiusdesk/db_conf || exit 1
+mkdir -p $RADIUSDESK_VOLUME || exit 1
+mkdir -p $RADIUSDESK_VOLUME/db_startup || exit 1
+mkdir -p $RADIUSDESK_VOLUME/db_conf || exit 1
+chmod -R 777 $RADIUSDESK_VOLUME || exit 1
+chmod -R 777 $RADIUSDESK_VOLUME/db_startup || exit 1
+chmod -R 777 $RADIUSDESK_VOLUME/db_conf || exit 1
 
 if [ -d "rdcore" ]
 then
@@ -43,7 +44,7 @@ docker compose up -d rdmariadb || exit 1
 
 echo
 echo Waiting for MariaDB to come up ...
-sleep 60
+sleep 5
 
 echo Creating database for Radiusdesk ...
 # Build daatabase

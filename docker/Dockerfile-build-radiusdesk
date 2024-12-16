@@ -95,18 +95,6 @@ FROM jtreminio/php:8.1
     # Copy php settings
     COPY ./php.ini /etc/php/php.ini
 
-    # Fix the configs to point to external database
-    RUN sed  -i  "s/'host' => 'localhost'/'host' => 'rdmariadb'/g" /var/www/html/cake4/rd_cake/config/app_local.php
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/reporting.php
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/flows_wip.php
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/process_flows.php
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/process_report.php
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/reporting_wip.php 
-    RUN sed  -i  "s/\$servername = \"localhost\";/\$servername = \"rdmariadb\";/g"  /var/www/rdcore/cake4/rd_cake/setup/scripts/reporting/send_remote_syslog.php
-
-    # Fix the Freeradius config to point to our new database
-    RUN sed  -i 's/server = \"localhost\"/server = \"rdmariadb\"/g'  /etc/freeradius/3.0/mods-available/sql
-
     # Copy files from production to root www
     RUN cp -R /var/www/html/rd/build/production/Rd/* /var/www/html/
 
